@@ -20,7 +20,9 @@ function New-JsonWebToken
     .PARAMETER AddJtiClaim
         Adds a unique identifier for the token in the form of a jti claim to the payload.
     .PARAMETER Key
-        This is the secret key used to generate an HMAC signature (as opposed to RSA) and should only be used for testing purposes.
+        This is the secret key used to generate an HMAC signature expressed as a string.
+    .PARAMETER SecureKey
+        This is the secret key used to generate an HMAC signature expressed as a System.Security.SecureString.
     .PARAMETER ExcludeDefaultClaims
         Excludes the jti, iat, and exp default claims from the payload when using the HMAC parameter set.
     .EXAMPLE
@@ -36,9 +38,14 @@ function New-JsonWebToken
 
         Generates a signed JSON Web Token using the certificate found in the local machine store with a thumbprint of 6C85DF2F915D0E28B719AEC188367092A0FD0CD2.
     .EXAMPLE
-        $hmacJwt = New-JsonWebToken -Claims @{sub="tonyg"} -HashAlgorithm SHA256 -Key "secretkey"
+        $hmacJwt = New-JsonWebToken -Claims @{sub="tonyg"} -HashAlgorithm SHA256 -Key "secretkey" -TimeToLive 300
 
-        Generates an HMAC-SHA256 signed JWT. This should NOT be used in a production environment!
+        Generates an HMAC-SHA256 signed JWT.
+    .EXAMPLE
+        $secureStringKey = "secretKey" | ConvertTo-SecureString -AsPlainText -Force
+        $hmacJwt = New-JsonWebToken -Claims @{sub="tonyg"} -HashAlgorithm SHA256 -SecureKey $secureStringKey -TimeToLive 300
+
+        Generates an HMAC-SHA256 signed JWT with the HMAC key passed as a SecureString.
     .OUTPUTS
         System.String
 
@@ -48,7 +55,8 @@ function New-JsonWebToken
 		New-JsonWebKey
 		New-JsonWebKeySet
 		Test-JsonWebToken
-		ConvertFrom-EncodedJsonWebToken
+        ConvertFrom-EncodedJsonWebToken
+        ConvertTo-SecureString
 #>
     [CmdletBinding()]
 	[Alias('njwt', 'NewJwt', 'CreateJwt')]
@@ -80,8 +88,12 @@ function New-JsonWebToken
         [System.Uri]$JwkUri,
 
         [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=7)]
-        [ValidateNotNullOrEmpty()]
+        [ValidateLength(4,32768)]
         [String]$Key,
+
+        [Parameter(Mandatory=$true,ParameterSetName="HMACSecure",Position=7)]
+        [ValidateNotNullOrEmpty()]
+        [System.Security.SecureString]$SecureKey,
 
         [Parameter(Mandatory=$false,Position=8)][Switch]$ExcludeDefaultClaims
 
@@ -160,9 +172,20 @@ function New-JsonWebToken
             #5. Construct jws:
             $jwt = "{0}.{1}" -f $jwtSansSig, $rsaSig
         }
-        else # Parameter set is HMAC
+        else # Parameter set is HMAC of HMACSecure
         {
-            [string]$hmacAlg = ""
+            [string]$hmacKey = ""
+            if ($PSCmdlet.ParameterSetName -eq "HMACSecure")
+            {
+                $networkCredential = [System.Net.NetworkCredential]::new("", $SecureKey)
+                $hmacKey = $networkCredential.Password
+            }
+            else
+            {
+                $hmacKey = $Key
+            }
+
+            $hmacAlg = ""
             switch ($HashAlgorithm)
             {
                 "SHA256" { $hmacAlg = "HS256" }
@@ -180,7 +203,7 @@ function New-JsonWebToken
             $jwtSansSig = "{0}.{1}" -f $header, $payload
 
             #4. Generate signature for concatenated header and payload:
-            $hmacSig = New-JwtSignature -JsonWebToken $jwtSansSig -Key $Key -HashAlgorithm $HashAlgorithm
+            $hmacSig = New-JwtSignature -JsonWebToken $jwtSansSig -Key $hmacKey -HashAlgorithm $HashAlgorithm
 
             #5. Construct jws:
             $jwt = "{0}.{1}" -f $jwtSansSig, $hmacSig
