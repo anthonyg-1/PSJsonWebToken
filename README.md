@@ -25,7 +25,7 @@ $jwt | ConvertFrom-EncodedJsonWebToken
 
 # Create an HMAC-SHA256 signed JWT with a five minute lifetime
 $secretKey = "secret" | ConvertTo-SecureString -AsPlainText -Force
-$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -SecureKey $secretKey -TimeToLive 
+$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -SecureKey $secretKey -TimeToLive 300
 
 
 # Validate an HMAC-SHA256 signed JWT
