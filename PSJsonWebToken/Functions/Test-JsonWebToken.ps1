@@ -69,11 +69,11 @@ function Test-JsonWebToken
         [Parameter(Mandatory=$false,Position=4)]
         [Switch]$SkipExpirationCheck
         )
-		BEGIN
-		{
-            $decodeExceptionMessage = "Unable to decode JWT."
-            $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
-		}
+	BEGIN
+	{
+		$decodeExceptionMessage = "Unable to decode JWT."
+		$ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
+	}
         PROCESS
         {
             [bool]$jwtIsValid = $false
