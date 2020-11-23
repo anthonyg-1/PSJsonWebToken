@@ -45,7 +45,7 @@ function Test-JsonWebToken
         ConvertTo-SecureString
 #>
     [CmdletBinding()]
-	[Alias('tjwt', 'ValidateJwt')]
+    [Alias('tjwt', 'ValidateJwt')]
     [OutputType([System.Boolean])]
     Param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
@@ -86,6 +86,8 @@ function Test-JsonWebToken
                 Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
             }
 
+            $missingDateExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
+
             if ($PSCmdlet.ParameterSetName -eq "RSA")
             {
                 try
@@ -110,8 +112,7 @@ function Test-JsonWebToken
                     }
                     catch
                     {
-                        $argumentExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
-                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $argumentExceptionMessage
+                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
                         Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
                     }
 
@@ -153,8 +154,7 @@ function Test-JsonWebToken
                     }
                     catch
                     {
-                        $argumentExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
-                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $argumentExceptionMessage
+                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
                         Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
                     }
 
