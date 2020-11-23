@@ -110,7 +110,7 @@ function Test-JsonWebToken
                     }
                     catch
                     {
-                        $argumentExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck."
+                        $argumentExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
                         $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $argumentExceptionMessage
                         Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
                     }
