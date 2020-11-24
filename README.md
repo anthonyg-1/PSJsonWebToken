@@ -108,7 +108,7 @@ $cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
 [System.Collections.Hashtable]$payload = Get-JsonWebTokenPayload -JsonWebToken $jwt
 
 # 4. Generate JWK set to be placed on http://myserver/jwkcollection/jwks.json:
-$cert | New-JsonWebKeySet -Compress | Out-File -FilePath "C:\temp\jwks.json" -Encoding ascii
+$cert | New-JsonWebKeySet -Compress | Out-File -FilePath "~/certs/jwks.json" -Encoding ascii
 
 # 5. Create token with jku claim in header signed by certificate with private key defined in step 2:
 $jwkUri = "http://myserver/jwkcollection/jwks.json"
