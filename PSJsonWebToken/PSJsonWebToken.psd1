@@ -12,7 +12,7 @@
 RootModule = '.\PSJsonWebToken.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.1.10'
+ModuleVersion = '1.1.9'
 
 # ID used to uniquely identify this module
 GUID = '75bb4722-7360-4260-be02-20e413528df2'
@@ -22,9 +22,6 @@ Author = 'Tony Guimelli'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '5.1'
-
-# Tags applied to this module. These help with module discovery in online galleries.
-Tags = @("jwt", "jwk", "jsonwebtoken", "jsonwebkey", "oidc", "openidconnect")
 
 # Description of the functionality provided by this module
 Description = 'This PowerShell module contains functions that facilitate the creation, validation, and decoding JWT (JSON Web Tokens) as well as the creation of JWK (JSON Web Keys).'
