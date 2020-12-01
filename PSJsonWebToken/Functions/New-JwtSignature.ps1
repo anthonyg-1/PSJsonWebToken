@@ -6,7 +6,7 @@
     .DESCRIPTION
         Generates an RSA or HMAC signature for the incoming value in the JsonWebToken parameter. The value passed to the JsonWebToken parameter should contain only the header and payload of a JSON Web Token with the appropriate algorithm being defined in the "alg" claim of the header.
     .PARAMETER JsonWebToken
-        Contains the JWT (not JWS) to generate the HMAC signature for.
+        Contains the JWT minus the signature (encoded header and payload seperated by a period) to generate the HMAC signature for.
     .PARAMETER HashAlgorithm
         The hash algorithim for the signature. Acceptable values are SHA256, SHA384, and SHA512.
     .PARAMETER SigningCertificate
