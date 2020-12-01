@@ -12,7 +12,7 @@
 RootModule = '.\PSJsonWebToken.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.1.9'
+ModuleVersion = '1.1.10'
 
 # ID used to uniquely identify this module
 GUID = '75bb4722-7360-4260-be02-20e413528df2'
@@ -27,7 +27,7 @@ PowerShellVersion = '5.1'
 Tags = @("jwt", "jwk", "jsonwebtoken", "jsonwebkey", "oidc", "openidconnect")
 
 # Description of the functionality provided by this module
-Description = 'This PowerShell module contains functions that facilitate the creation, validation, and decoding JSON Web Tokens (JWT) as well as the creation of JSON Web Keys (JWK).'
+Description = 'This PowerShell module contains functions that facilitate the creation, validation, and decoding JWT (JSON Web Tokens) as well as the creation of JWK (JSON Web Keys).'
 
 # Functions to export from this module
 FunctionsToExport = 'ConvertTo-Base64UrlEncodedString', 'ConvertFrom-Base64UrlEncodedString', 'New-JwtSignature', 'New-JsonWebToken', 'Test-JsonWebToken', 'ConvertFrom-EncodedJsonWebToken', 'New-JsonWebKeySet', 'Get-JsonWebTokenHeader', 'Get-JsonWebTokenPayload', 'Get-JsonWebTokenSignature', 'ConvertTo-JwtPart', 'Test-JwtStructure', 'Test-JwtSignature', 'Convert-DateTimeToEpoch', 'Convert-EpochToDateTime', 'Test-JwtDateRange', 'Convert-X509CertificateToBase64'
