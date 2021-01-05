@@ -57,7 +57,7 @@ $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5
 Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -Certificate $cert
 ```
 
-### Generate a JWK (JSON Web Key set) from a certificate
+### Generate a JWK (JSON Web Key) set from a certificate
 ```powershell
 # Return as formatted JSON
 $cert = Get-PfxCertificate -FilePath "~/certs/cert.cer" 
