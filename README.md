@@ -16,7 +16,7 @@ Installing the module.
 
 ```powershell
 # Install module
-Install-Module -Name PSJsonWebToken -Scope CurrentUser -Repository PSGallery
+Install-Module -Name PSJsonWebToken -Scope CurrentUser -Repository PSGallery -AllowClobber
 ```
 
 ## Examples
