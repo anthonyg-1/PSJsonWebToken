@@ -65,6 +65,7 @@ function ConvertFrom-EncodedJsonWebToken
         $serializedPayload = $deserializedPayload | ConvertTo-Json -Compress
         $signatureString = $JsonWebToken.Split(".")[2]
 
+        <#
         if ($deserializedHeader.ContainsKey("typ"))
         {
             if ($deserializedHeader.Item("typ") -ne "JWT")
@@ -76,6 +77,7 @@ function ConvertFrom-EncodedJsonWebToken
         {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
+        #>
 
         $decodedJsonWebToken = [PSJsonWebToken.DecodedJsonWebToken]::new()
         $decodedJsonWebToken.Header = $serializedHeader
