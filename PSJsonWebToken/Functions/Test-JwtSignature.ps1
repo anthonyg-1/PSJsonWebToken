@@ -37,7 +37,7 @@ function Test-JwtSignature
             "kid": "2yCvZnk7k8W66wR2LXR9WCswhAc"
         }
         '
-        Test-JwtSignature -JsonWebToken $jwt -JsonWebKey $jwk -HashAlgorithm SHA256
+        Test-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $jwk
 
         Verifies a JSON Web Token's digital signature against a JSON Web Key.
     .OUTPUTS
