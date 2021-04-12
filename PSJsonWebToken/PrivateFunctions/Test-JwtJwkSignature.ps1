@@ -32,8 +32,13 @@ function Test-JwtJwkSignature
             Write-Error -Exception $ArgumentException -ErrorAction Stop
         }
 
-        if (($null -eq $jwkData.n) -or ($null -eq $jwkData.e)) {
-            $ArgumentException = 'Invalid JSON Web Key passed. Ensure that a valid JWK is passed that contains the public exponent as "e" and modulus as "n" per RFC 7517.'
+        if (($null -eq $jwkData.kty) -or ($null -eq $jwkData.n) -or ($null -eq $jwkData.e)) {
+            $ArgumentException = 'Invalid JSON Web Key passed. Ensure that a valid JWK is passed that contains the key type expressed as "kty", a public exponent as "e”, and modulus as "n" parameters per RFC 7517.'
+            Write-Error -Exception $ArgumentException -ErrorAction Stop
+        }
+
+        if (($jwkData.kty).ToUpper() -ne "RSA") {
+            $ArgumentException = 'Only a key type of RSA is supported at this time.'
             Write-Error -Exception $ArgumentException -ErrorAction Stop
         }
 
@@ -57,6 +62,7 @@ function Test-JwtJwkSignature
         }
         catch {
             $sigVerifies = $false
+
         }
 
         return $sigVerifies
