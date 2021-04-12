@@ -1,4 +1,4 @@
-﻿function Test-JwtJwkSignature
+function Test-JwtJwkSignature
 {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -46,8 +46,8 @@
         $payloadPart = Get-JsonWebTokenPayload -JsonWebToken $JsonWebToken -AsEncodedString
         $jwtSansSig = "{0}.{1}" -f $headerPart, $payloadPart
 
+        $publicKey = [RSACryptoServiceProvider]::new()
         try {
-            $publicKey = [RSACryptoServiceProvider]::new()
             $rsaParams = [RSAParameters]::new()
             $modulus = $jwkData.n | ConvertFrom-Base64UrlEncodedString -AsBytes -ErrorAction Stop
             $exponent = $jwkData.e | ConvertFrom-Base64UrlEncodedString -AsBytes -ErrorAction Stop
@@ -62,7 +62,9 @@
         }
         catch {
             $sigVerifies = $false
-
+        }
+        finally {
+            $publicKey.Dispose()
         }
 
         return $sigVerifies
