@@ -57,7 +57,6 @@ function Test-JwtJwkSignature
         }
         catch {
             $sigVerifies = $false
-
         }
 
         return $sigVerifies
