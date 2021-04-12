@@ -70,7 +70,7 @@ function Test-JsonWebToken
 	.OUTPUTS
        System.Boolean
     .LINK
-		https://tools.ietf.org/html/rfc7519
+        https://tools.ietf.org/html/rfc7519
         https://tools.ietf.org/html/rfc7517
         New-JsonWebToken
         ConvertTo-SecureString
