@@ -1,4 +1,4 @@
-function Test-JwtJwkSignature
+﻿function Test-JwtJwkSignature
 {
     [CmdletBinding()]
     [OutputType([bool])]
