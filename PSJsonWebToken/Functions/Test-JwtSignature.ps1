@@ -1,4 +1,4 @@
-﻿function Test-JwtSignature
+function Test-JwtSignature
 {
 <#
     .SYNOPSIS
@@ -7,7 +7,7 @@
         Validates a JSON Web Token digital signature only (no payload) for either RSA or HMAC signed JSON Web Tokens.
     .PARAMETER JsonWebToken
         The JSON Web Token containing the digital signature to be verified.
-    PARAMETER HashAlgorithm
+    .PARAMETER HashAlgorithm
         The RSA hash algorithim for the signature. Acceptable values are SHA256, SHA384, and SHA512. Default value is SHA256.
     .PARAMETER VerificationCertificate
         The certificate that will be used to verify the signature of the JSON Web Token. The private key is NOT needed for signature verification.
@@ -38,15 +38,12 @@
         [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
         [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken,
 
-        [Parameter(Position=2,Mandatory=$true,ParameterSetName="RSA")]
-        [Parameter(Position=2,Mandatory=$true,ParameterSetName="HMAC")]
-        [ValidateSet("SHA256","SHA384","SHA512")]
-        [String]$HashAlgorithm,
+        [Parameter(Mandatory=$true,Position=1)][ValidateSet("SHA256","SHA384","SHA512")][String]$HashAlgorithm,
 
         [Parameter(Mandatory=$true,ParameterSetName="RSA",Position=2)][Alias("Certificate", "Cert")]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$VerificationCertificate,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=3)]
+        [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=2)]
         [ValidateNotNullOrEmpty()]
         [String]$Key
         )
