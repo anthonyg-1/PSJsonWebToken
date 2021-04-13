@@ -52,22 +52,8 @@ function Test-JsonWebToken
         '
         Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $jwk
 
-        Verifies a JSON Web Token's digital signature against a JSON Web Key as well as determining that that token is not expired.
-    .EXAMPLE
-        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ilg1ZVhrNHh5b2pORnVtMWtsMll0djhkbE5QNC1jNTdkTzZRR1RWQndhTmsifQ.eyJleHAiOjE2MTgyNjEzMjAsIm5iZiI6MTYxODI1NzcyMCwidmVyIjoiMS4wIiwiaXNzIjoiaHR0cHM6Ly9zYnhmbWdpZHAuYjJjbG9naW4uY29tLzljNTQyYTI1LTcxNGEtNDI0ZS1hMmVhLWE2Y2Y3MDEzYzRjZS92Mi4wLyIsInN1YiI6IjNhMjE1OTEzLThjZTUtNGYyOS1iYzQ2LTM3NGUwMzRhMTViNiIsImF1ZCI6IjA4NTRlYTM3LTNmYWMtNDg5Mi04MDJhLTljN2NjMWIwYzQzZSIsIm5vbmNlIjoiYjQwODBhYjItODhiZi00YjFiLTk0NGItNzI4ZmViNzJkZjg4IiwiaWF0IjoxNjE4MjU3NzIwLCJhdXRoX3RpbWUiOjE2MTgyNTc3MjAsImVtYWlscyI6WyJqZXNzZS5yb3NlbmhvbG1AZm1nbG9iYWwuY29tIl0sInRmcCI6IkIyQ18xX1NpZ25VcF9TaWduSW4ifQ.r8OE86lal68e0hOkqVvt6jGQlO01FmD8WKMX4nF6XjjgLR3RH832OnEGbNce2GGSotESFXlTCLH5k2yWPdJluXdQ1lJk-cU20g8OwsiqOxoH9VfChwlKDlMHpchX178E-2zMMs2d8vaWL6y2VOjnX5I95HZFoJ1Jj_OxcYA5hHfOqSZNZ0fkFY0yP1t-_2ZHLAciCEvF5y7ucdCfVRNrUyFdVdZ8bl_F31Lx0GJxYAJhB8bVZXgyHoPkM_IJaztKsfuCiK3LkNjHTBbyuaXEfZnhQ8cSYorDRxGi0h-efIb2HNfo7kBQ7882oxCoRNCv0NXAIQUBup4T113c0bQk9g"
-        $jku = "https://login.myapp.com/common/discovery/v2.0/keys"
-
-        Invoke-RestMethod -Method Get -Uri $jku | Select -ExpandProperty keys | ConvertTo-Json | ForEach-Object {
-            if (Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $_) {
-                Write-Host $_ -ForegroundColor Green
-            }
-            else {
-                Write-Host $_ -ForegroundColor Red
-            }
-        }
-
-        Gets a collection of JWKs from an endpoint and attempts to validate a JWT against each one of them.
-	.OUTPUTS
+        Verifies a JSON Web Token's digital signature against a JSON Web Key as well as determining that that token is not expired.   
+    .OUTPUTS
        System.Boolean
     .LINK
         https://tools.ietf.org/html/rfc7519
