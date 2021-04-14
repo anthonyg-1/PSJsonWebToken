@@ -52,7 +52,7 @@ function Test-JsonWebToken
         '
         Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $jwk
 
-        Verifies a JSON Web Token's digital signature against a JSON Web Key as well as determining that that token is not expired.   
+        Verifies a JSON Web Token's digital signature against a JSON Web Key as well as determining that that token is not expired.
     .OUTPUTS
        System.Boolean
     .LINK
@@ -90,11 +90,11 @@ function Test-JsonWebToken
         [Parameter(Mandatory=$false,Position=4)]
         [Switch]$SkipExpirationCheck
         )
-	BEGIN
-	{
-		$decodeExceptionMessage = "Unable to decode JWT."
-		$ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
-	}
+        BEGIN
+        {
+            $decodeExceptionMessage = "Unable to decode JWT."
+            $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
+        }
         PROCESS
         {
             [bool]$jwtIsValid = $false
@@ -148,7 +148,7 @@ function Test-JsonWebToken
                 }
                 catch
                 {
-                    Write-Error -Exception $_ -Category InvalidResult -ErrorAction Stop
+                    Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
                 }
 
                 if ($PSBoundParameters.ContainsKey("SkipExpirationCheck"))
