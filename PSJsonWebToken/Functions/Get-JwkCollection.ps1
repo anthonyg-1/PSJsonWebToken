@@ -21,7 +21,7 @@
 
         Get-JwkCollection -Uri $jwkUri -AsJson | ForEach-Object { Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $_ -SkipExpirationCheck }
 
-        Attempts to validate a JSON Web Token against a collection of JSON Web Keys in https://app.mycompany.com/common/discovery/keys.
+        Attempts to validate a JSON Web Token signature against a collection of JSON Web Keys in https://app.mycompany.com/common/discovery/keys.
     .INPUTS
         System.Uri
     .OUTPUTS
