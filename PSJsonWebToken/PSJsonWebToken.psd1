@@ -12,7 +12,7 @@
 RootModule = '.\PSJsonWebToken.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.3.3'
+ModuleVersion = '1.4.0'
 
 # ID used to uniquely identify this module
 GUID = '75bb4722-7360-4260-be02-20e413528df2'
@@ -27,7 +27,7 @@ PowerShellVersion = '5.1'
 Description = 'This PowerShell module contains functions that facilitate the creation, validation, and decoding of JWTs (JSON Web Tokens) as well as the creation of JWKs (JSON Web Keys).'
 
 # Functions to export from this module
-FunctionsToExport = 'ConvertTo-Base64UrlEncodedString', 'ConvertFrom-Base64UrlEncodedString', 'New-JwtSignature', 'New-JsonWebToken', 'Test-JsonWebToken', 'ConvertFrom-EncodedJsonWebToken', 'New-JsonWebKeySet', 'Get-JsonWebTokenHeader', 'Get-JsonWebTokenPayload', 'Get-JsonWebTokenSignature', 'ConvertTo-JwtPart', 'Test-JwtStructure', 'Test-JwtSignature', 'Convert-DateTimeToEpoch', 'Convert-EpochToDateTime', 'Test-JwtDateRange', 'Convert-X509CertificateToBase64'
+FunctionsToExport = 'ConvertTo-Base64UrlEncodedString', 'ConvertFrom-Base64UrlEncodedString', 'New-JwtSignature', 'New-JsonWebToken', 'Test-JsonWebToken', 'ConvertFrom-EncodedJsonWebToken', 'New-JsonWebKeySet', 'Get-JsonWebTokenHeader', 'Get-JsonWebTokenPayload', 'Get-JsonWebTokenSignature', 'ConvertTo-JwtPart', 'Test-JwtStructure', 'Test-JwtSignature', 'Convert-DateTimeToEpoch', 'Convert-EpochToDateTime', 'Test-JwtDateRange', 'Convert-X509CertificateToBase64', 'Get-JwkCollection'
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
 AliasesToExport = "njwt", "NewJwt", "CreateJwt", "tjwt", "ValidateJwt", "DecodeJwt", "njwks", "CreateJwkSet", "b64e", "Encode", "b64d", "Decode", "GetEpoch"
