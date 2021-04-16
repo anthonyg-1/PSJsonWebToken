@@ -17,6 +17,8 @@ function Test-JsonWebToken
         The secret key used to validate an HMAC signature expressed as a System.Security.SecureString.
     .PARAMETER JsonWebKey
         The JSON Web Key (X509 certificate public key) to verify the signature of the JSON Web Token per RFC 7517.
+    .PARAMETER Uri
+        Specifies the Uniform Resource Identifier (URI) containing the JSON Web Keys to validate the JSON Web Token against. Can be a well-known OpenID Connect discovery endpoint or a link containing the JWKs directly.
     .PARAMETER SkipExpirationCheck
         Tells this function to verify the signature of the JWT only and not to evaluate token expiration.
     .EXAMPLE
@@ -53,15 +55,18 @@ function Test-JsonWebToken
         Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $jwk
 
         Verifies a JSON Web Token's digital signature against a JSON Web Key as well as determining that that token is not expired.
+    .EXAMPLE
+        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyIsImtpZCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyJ9.eyJpYXQiOjE2MTgyNTAzODksIm5iZiI6MTYxODI1MDM4OSwiZXhwIjoxNjE4MjU1MTg5LCJzdWIiOiJ0b255In0.X-RZm-3Hto5U-8Q-Wp1ggqWTFPkO5-Cz9lzoKsH5-1RR9GOrGPuWn-bjIv1YJ46h5Bw-KpiX-dOS47TAq2A0BWdAwczLVA6pzha1WswkT_u3cO1_KSoOjD9qFLjCgk-ns7A48iXpNcOoPBFXgfx8G0rRK68sSnokJ7N2NH-YNUOjg3U7DNJ_-iz8WZ5dNlOvpDsTy0BHMX-lho18sUmakUNpadJr-oD7BXIp--Z57UERBFibppaoxseYRo3VfmhgHibTxP-39mcxU6sH9a99fEEt80hj4w6rZobRxZV-pFPS22B8TBAfVf8L9faMLaXmgV7xtQohqQZgL6oKdJzFPQ"
+        $jwkUri = "https://app.mycompany.com/common/discovery/keys"
+        Test-JsonWebToken -JsonWebToken $jwt -Uri $jwkUri -HashAlgorithm SHA256 -SkipExpirationCheck -Verbose
+
+        Attempts to validate a JSON Web Token signature against a collection of JSON Web Keys in https://app.mycompany.com/common/discovery/keys and provides verbose output detailing what JWK was used to verify the signature.
     .OUTPUTS
        System.Boolean
     .LINK
         https://tools.ietf.org/html/rfc7519
         https://tools.ietf.org/html/rfc7517
         New-JsonWebToken
-        ConvertTo-SecureString
-        Invoke-RestMethod
-        ConvertTo-Json
 #>
     [CmdletBinding()]
     [Alias('tjwt', 'ValidateJwt')]
@@ -87,6 +92,8 @@ function Test-JsonWebToken
 
         [Parameter(Mandatory=$true,ParameterSetName="JWK",Position=3)][Alias("jwk")][ValidateLength(12, 1073741791)][String]$JsonWebKey,
 
+        [Parameter(Mandatory=$true,ParameterSetName="URI",Position=3)][Alias('OidcUri','JwkUri')][System.Uri]$Uri,
+
         [Parameter(Mandatory=$false,Position=4)]
         [Switch]$SkipExpirationCheck
         )
@@ -107,7 +114,13 @@ function Test-JsonWebToken
                 Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
             }
 
-            $missingDateExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
+            [string]$missingDateExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
+
+            # Verbose messages:
+            [string]$sigValidMessage = "Signature was verified."
+            [string]$sigInvalidMessage = "Signature was not verified."
+            [string]$dateRangedValidMessage = "JWT date range is valid."
+            [string]$dateRangedNotValidMessage = "JWT is expired."
 
             if ($PSCmdlet.ParameterSetName -eq "RSA")
             {
@@ -171,6 +184,62 @@ function Test-JsonWebToken
                     $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
                 }
             }
+            elseif ($PSCmdlet.ParameterSetName -eq "URI")
+            {
+                $jsonWebKeys = @()
+                try
+                {
+                    $jsonWebKeys += (Get-JwkCollection -Uri $Uri -AsJson -ErrorAction Stop)
+                }
+                catch
+                {
+                    Write-Error -Exception $_.Exception -ErrorAction Stop
+                }
+
+                foreach ($jwk in $jsonWebKeys)
+                {
+                    try
+                    {
+                        if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $jwk -ErrorAction Stop)
+                        {
+                            $signatureIsValid = $true
+                            $jwkValidMessage = "Verified signature against the following JWK: {0}" -f $jwk
+                            Write-Verbose -Message $jwkValidMessage
+                            break
+                        }
+                        else
+                        {
+                            $jwkInvalidMessage = "Unable to validate signature against the following JWK: {0}" -f $jwk
+                            Write-Verbose -Message $jwkInvalidMessage
+                        }
+                    }
+                    catch
+                    {
+                        Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
+                    }
+                }
+
+                if ($PSBoundParameters.ContainsKey("SkipExpirationCheck"))
+                {
+                    $jwtIsValid = $signatureIsValid
+                }
+                else
+                {
+                    [bool]$tokenIsNotExpired = $false
+                    try
+                    {
+                        $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
+                    }
+                    catch
+                    {
+                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
+                        Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
+                    }
+
+                    $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
+                }
+
+            }
             else # Parameter set is HMAC of HMACSecure
             {
                 [string]$hmacKey = ""
@@ -212,6 +281,27 @@ function Test-JsonWebToken
 
                     $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
                 }
+            }
+
+            if (-not($PSBoundParameters.ContainsKey("SkipExpirationCheck")))
+            {
+                if ($tokenIsNotExpired)
+                {
+                    Write-Verbose -Message $dateRangedValidMessage
+                }
+                else
+                {
+                    Write-Verbose -Message $dateRangedNotValidMessage
+                }
+            }
+
+            if ($signatureIsValid)
+            {
+                Write-Verbose -Message $sigValidMessage
+            }
+            else
+            {
+                Write-Verbose -Message $sigInvalidMessage
             }
 
             return $jwtIsValid
