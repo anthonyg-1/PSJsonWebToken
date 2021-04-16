@@ -1,4 +1,4 @@
-﻿function ConvertTo-JwtPart
+function ConvertTo-JwtPart
 {
     <#
     .SYNOPSIS
@@ -27,9 +27,7 @@
 
         Constructs a header and payload from InputObjects, serializes and encodes them and obtains an HMAC signature from the resulting joined values.
     .INPUTS
-        System.Collections.InputObject
-
-            A InputObject is received by the InputObject parameter.
+        System.Object
     .OUTPUTS
         System.String
     .LINK
