@@ -75,9 +75,9 @@ function Test-JsonWebToken
         [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
         [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken,
 
-        [Parameter(Mandatory=$true,Position=2)]
+        [Parameter(Mandatory=$false,Position=2)]
         [ValidateSet("SHA256","SHA384","SHA512")]
-        [String]$HashAlgorithm,
+        [String]$HashAlgorithm="SHA256",
 
         [Parameter(Mandatory=$true,ParameterSetName="RSA",Position=3)][Alias("Certificate", "Cert")]
         [ValidateNotNullOrEmpty()][System.Security.Cryptography.X509Certificates.X509Certificate2]$VerificationCertificate,
@@ -121,6 +121,14 @@ function Test-JsonWebToken
             [string]$sigInvalidMessage = "Signature was not verified."
             [string]$dateRangedValidMessage = "JWT date range is valid."
             [string]$dateRangedNotValidMessage = "JWT is expired."
+
+            $headerTable = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken
+            if ($null -ne $headerTable["kid"])
+            {
+                $kid = $headerTable["kid"]
+                $kidMessage = "Identifier of the signing key for the JWT: {0}" -f $kid
+                Write-Verbose -Message $kidMessage
+            }
 
             if ($PSCmdlet.ParameterSetName -eq "RSA")
             {
