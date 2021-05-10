@@ -217,7 +217,7 @@ function Test-JsonWebToken
                         }
                         else
                         {
-                            $jwkInvalidMessage = "Unable to validate signature against the following JWK: {0}" -f $jwk
+                            $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $jwk
                             Write-Verbose -Message $jwkInvalidMessage
                         }
                     }
