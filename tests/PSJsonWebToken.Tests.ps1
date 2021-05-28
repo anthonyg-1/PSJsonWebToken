@@ -1,4 +1,4 @@
-﻿using namespace System
+using namespace System
 using namespace System.Security.Cryptography
 using namespace System.Security.Cryptography.X509Certificates
 
@@ -17,13 +17,6 @@ $moduleDirectory = Get-Item -Path ../$module | Select-Object -ExpandProperty Ful
 Clear-Host
 
 # Signing cert to be used for integration tests that require an X509 cert:
-function Get-TokenSigningCert
-{
-      
-    $signingCertificate = Get-PfxCertificate -FilePath ~/certs/cert.pfx -Password ("secret" | ConvertTo-SecureString -AsPlainText -Force)    
-
-    return $signingCertificate
-}
 
 Describe "$module Module Structure and Validation Tests" -Tag Unit -WarningAction SilentlyContinue {
     Context "$module" {
@@ -79,32 +72,32 @@ Describe "Testing module and cmdlets against PSSA rules" -Tag Unit -WarningActio
     $scriptAnalyzerRules = Get-ScriptAnalyzerRule
 
     Context "$module test against PSSA rules" {
-        $modulePath = "$moduleDirectory\$module.psm1"
+        $modulePath = "$moduleDirectory\$module.psm1"
 
-        $analysis = Invoke-ScriptAnalyzer -Path $modulePath        
- 
-        foreach ($rule in $scriptAnalyzerRules) {
-            It "should pass $rule" {
-                If ($analysis.RuleName -contains $rule) {
-                    $analysis | Where RuleName -eq $rule -OutVariable failures
+        $analysis = Invoke-ScriptAnalyzer -Path $modulePath
+
+        foreach ($rule in $scriptAnalyzerRules) {
+            It "should pass $rule" {
+                If ($analysis.RuleName -contains $rule) {
+                    $analysis | Where RuleName -eq $rule -OutVariable failures
                     $failures.Count | Should -Be 0
-                }
-            }
-        }
-    }
+                }
+            }
+        }
+    }
 
     Get-ChildItem -Path "$moduleDirectory\Functions" -Filter *.ps1 -Recurse | ForEach-Object {
         Context "$_ test against PSSA rules" {
-            $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -ExcludeRule PSUseShouldProcessForStateChangingFunctions        
- 
-            foreach ($rule in $scriptAnalyzerRules) {
-                It "should pass $rule" {
-                    If ($analysis.RuleName -contains $rule) {
-                        $analysis | Where RuleName -eq $rule -OutVariable failures
-                        $failures.Count | Should -Be 0
-                    }
-                }
-            }
+            $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -ExcludeRule PSUseShouldProcessForStateChangingFunctions
+
+            foreach ($rule in $scriptAnalyzerRules) {
+                It "should pass $rule" {
+                    If ($analysis.RuleName -contains $rule) {
+                        $analysis | Where RuleName -eq $rule -OutVariable failures
+                        $failures.Count | Should -Be 0
+                    }
+                }
+            }
         }
     }
 }
@@ -114,33 +107,27 @@ Describe "Testing private functions against PSSA rules" -Tag Unit -WarningAction
 
     Get-ChildItem -Path "$moduleDirectory\PrivateFunctions" -Filter *.ps1 -Recurse | ForEach-Object {
         Context "$_ test against PSSA rules" {
-            $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -ExcludeRule PSUseShouldProcessForStateChangingFunctions        
- 
-            foreach ($rule in $scriptAnalyzerRules) {
-                It "should pass $rule" {
-                    If ($analysis.RuleName -contains $rule) {
-                        $analysis | Where RuleName -eq $rule -OutVariable failures
-                        $failures.Count | Should -Be 0
-                    }
-                }
-            }
+            $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -ExcludeRule PSUseShouldProcessForStateChangingFunctions
+
+            foreach ($rule in $scriptAnalyzerRules) {
+                It "should pass $rule" {
+                    If ($analysis.RuleName -contains $rule) {
+                        $analysis | Where RuleName -eq $rule -OutVariable failures
+                        $failures.Count | Should -Be 0
+                    }
+                }
+            }
         }
     }
 }
 
 Describe "$module Function Tests" -Tag Functional, Integration -WarningAction SilentlyContinue {
 
-    # Get the token signing certificate to be used throughout the module:
-    $signingCertificate = Get-TokenSigningCert
-
-    $certThumbprint = $signingCertificate.Thumbprint
-
-    $claims = @{sub="someone@somecompany.com"}
+    $claims = @{sub = "someone@somecompany.com" }
     $secretHmacKey = "secret"
     $badHmacKey = "not the secret"
 
-    $hmacJwt = New-JsonWebToken -Claims $claims -HashAlgorithm SHA256 -Key $secretHmacKey
-    $rsaJwt = New-JsonWebToken -Claims $claims  -SigningCertificate $signingCertificate -HashAlgorithm SHA256 -TimeToLive 300
+    $hmacJwt = New-JsonWebToken -Claims $claims -HashAlgorithm SHA256 -Key $secretHmacKey -TimeToLive 300
 
     Context 'New-JsonWebToken' {
         It "should contain a header with an alg claim of HS256" {
@@ -148,21 +135,21 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $headerTable.ContainsKey("alg") | Should -Be True
             $headerTable.alg -eq "HS256" | Should -Be True
         }
-
-        It "should contain a header with an alg claim of RS256" {
-            $headerTable = $rsaJwt | Get-JsonWebTokenHeader
-            $headerTable.ContainsKey("alg") | Should -Be True
-            $headerTable.alg -eq "RS256" | Should -Be True
-        }
     }
 
     Context 'Test-JsonWebToken' {
         It ("should validate against an HMAC key of '{0}'" -f $secretHmacKey) {
-           Test-JsonWebToken -JsonWebToken $hmacJwt -HashAlgorithm SHA256 -Key $secretHmacKey | Should -Be True
+            Test-JsonWebToken -JsonWebToken $hmacJwt -HashAlgorithm SHA256 -Key $secretHmacKey | Should -Be True
         }
 
         It ("should not validate against an HMAC key of '{0}'" -f $badHmacKey) {
-           Test-JsonWebToken -JsonWebToken $hmacJwt -HashAlgorithm SHA256 -Key $badHmacKey | Should -Be False
+            Test-JsonWebToken -JsonWebToken $hmacJwt -HashAlgorithm SHA256 -Key $badHmacKey | Should -Be False
+        }
+
+        It ("should validate against an HMAC key as secure string via the SecureKey parameter") {
+            $secureKey = "this is a secret" | ConvertTo-SecureString -AsPlainText -Force
+            $jwt = New-JsonWebToken -Claims @{sub = "me@mycompany.com" } -HashAlgorithm SHA256 -AddJtiClaim -SecureKey $secureKey
+            Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -SecureKey $secureKey | Should -Be True
         }
 
         It "should not validate against a token with a manipulated payload for HMAC signed token" {
@@ -178,27 +165,20 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             Test-JsonWebToken -JsonWebToken $badJwt -HashAlgorithm SHA256 -Key $secretHmacKey | Should -Be False
         }
 
-        It "should validate against the correct RSA certificate" {
-            [bool]$tokenIsValid = Test-JsonWebToken -JsonWebToken $rsaJwt -HashAlgorithm SHA256 -VerificationCertificate $signingCertificate -WarningAction SilentlyContinue
-            $tokenIsValid | Should -Be True
-        }
-
         It "should throw an exception with a token that has no exp claim in the payload" {
             $key = "secret"
-            $header = @{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
-            $payload = @{sub="firstname.lastname@domain.com"} | ConvertTo-JwtPart
+            $header = @{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+            $payload = @{sub = "firstname.lastname@domain.com" } | ConvertTo-JwtPart
 
             $sig = New-JwtSignature -JsonWebToken ("$header.$payload") -HashAlgorithm SHA256 -Key $key
 
             $jwt = "$header.$payload.$sig"
 
             [bool]$exceptionThrown = $false
-            try
-            {
+            try {
                 Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key -ErrorAction Stop | Out-Null
             }
-            catch
-            {
+            catch {
                 $exceptionThrown = $true
             }
 
@@ -207,39 +187,41 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
         It "should not throw an exception with a token that has no exp claim in the payload with the switch is used" {
             $key = "secret"
-            $header = @{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
-            $payload = @{sub="firstname.lastname@domain.com"} | ConvertTo-JwtPart
+            $header = @{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+            $payload = @{sub = "firstname.lastname@domain.com" } | ConvertTo-JwtPart
 
             $sig = New-JwtSignature -JsonWebToken ("$header.$payload") -HashAlgorithm SHA256 -Key $key
 
             $jwt = "$header.$payload.$sig"
 
             [bool]$exceptionThrown = $false
-            try
-            {
+            try {
                 Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key -SkipExpirationCheck -ErrorAction Stop | Out-Null
             }
-            catch
-            {
+            catch {
                 $exceptionThrown = $true
             }
 
             $exceptionThrown | Should -Be False
         }
-    }    
+    }
 
-    Context 'New-JsonWebKeySet'{
-        $jwkSet = $signingCertificate | New-JsonWebKeySet
+    Context 'New-JsonWebKeySet' {
+        $base64Cert = 'MIIDYTCCAkmgAwIBAgIIb8nnhta1VXswDQYJKoZIhvcNAQELBQAwKDEmMCQGA1UEAxMdRk0gR2xvYmFsIElzc3VpbmcgQXV0aG9yaXR5IDIwHhcNMjAwNjEyMTMwNTAxWhcNMjEwODExMjMxMjUwWjA4MSEwHwYDVQQLExhEb21haW4gQ29udHJvbCBWYWxpZGF0ZWQxEzARBgNVBAMMCiouaWV0Zi5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDC1dBb17fWfCyrm0RJUtAE0sd3lqAn8IYUWN+xF8T5u2OVrlj9SoCLLPiugPo2+hFGjuLqFKYTxd2wJUKCKQHde/ZmuQarxcLqTBIT4LLNp9ttSfeuAtz6lCR/MjrEUUvyTzWY2+yW7jyQ3TN2Z3D9JEqpWWJPIZHohaApyZSyFmqL3+Obi5pI5l6336snV/QpeAPAwtUDT5afEGsofIjwhwX01YESk1ppmq2Vr3HilkHK8tp+FTPci2hz6jfSR3JTZc9OODx07t+lEeTRbfSUfddYNNafkCpt7hhB6w+o7khj8VpWkAp7xQ8xPfpSFew8XNmIETYsMA9B/zRcE/87AgMBAAGjfzB9MAwGA1UdEwEB/wQCMAAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA4GA1UdDwEB/wQEAwIFoDAfBgNVHREEGDAWggoqLmlldGYub3JngghpZXRmLm9yZzAdBgNVHQ4EFgQUBv4Lq9jmdG78xHMChfepSH7RNE8wDQYJKoZIhvcNAQELBQADggEBAE1iQcmOGqZczuZLu71E65jfgw7yFtJvHudniiSDNBxLZEAB5E04Xg9Z39R4MPt5AWKqirx3hV6yKBaz4bmazvnthCzBOol1sS1Gc0bv1yjx3ixJUc7wwMUvJEMZpPm7HKDnDhKwSTbpvg4qokVWlFEHe09oLv0EuIfCM+/nOMR0vJertSPoQ1r3FPweOmdnTspUwuPVLz1uu9xQNIvaYC/8LCejuQaNstmYkZj+SJaZRiP7szr0MPPPrUQj7Taah7yvMOdoprlz6NQAIZvtwE90/GlRQUgG2yRjpHcCkg+eT8qUZyPeM28tqwLmUfTleg1/bmfvytEoGFTZ9gj3tWY='
+
+        [byte[]]$certBytes = [System.Convert]::FromBase64String($base64Cert)
+        [X509Certificate2]$cert = New-Object -TypeName X509Certificate2 -ArgumentList (, $certBytes)
+
+        $jwkSet = $cert | New-JsonWebKeySet
 
         It "should serialize an X509Certficate2 as JSON" {
             [bool]$itSerializes = $false
-            try
-            {
+
+            try {
                 $jwkSet | ConvertFrom-Json -ErrorAction Stop | Out-Null
                 $itSerializes = $true
             }
-            catch
-            {
+            catch {
                 $itSerializes = $false
             }
 
@@ -249,14 +231,14 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
     Context "ConvertTo-JwtPart" {
         It "should convert a Hashtable into a base64 URL encoded JSON string" {
-            $claims = [ordered]@{sub="tony";office="RI";country="US"}
-            $jwtPart = $claims | ConvertTo-JwtPart 
+            $claims = [ordered]@{sub = "tony"; office = "RI"; country = "US" }
+            $jwtPart = $claims | ConvertTo-JwtPart
             $jwtPart | Should -Be "eyJzdWIiOiJ0b255Iiwib2ZmaWNlIjoiUkkiLCJjb3VudHJ5IjoiVVMifQ"
         }
     }
 
     Context "Get-JsonWebTokenHeader" {
-        $jwt = New-JsonWebToken -Claims @{sub="me@company.com"} -HashAlgorithm SHA256 -Key "secret"
+        $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret"
         $headerTable = $jwt | Get-JsonWebTokenHeader
 
         It "should convert a JWT header into a Hashtable" {
@@ -271,7 +253,7 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
     Context "Get-JsonWebTokenPayload" {
         $subject = "me@company.com"
-        $jwt = New-JsonWebToken -Claims @{sub=$subject} -HashAlgorithm SHA256 -Key "secret"
+        $jwt = New-JsonWebToken -Claims @{sub = $subject } -HashAlgorithm SHA256 -Key "secret"
         $payloadTable = $jwt | Get-JsonWebTokenPayload
 
         It "should convert a JWT payload into a Hashtable" {
@@ -286,41 +268,12 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
     Context "Get-JsonWebTokenSignature" {
         It "should convert an encode JWT signature into a byte array" {
-            $jwt = New-JsonWebToken -Claims @{sub="me@company.com"} -HashAlgorithm SHA256 -Key "secret"
+            $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret"
             $jwt | Get-JsonWebTokenSignature | Get-Member | Select -ExpandProperty TypeName -Unique | Should -Be "System.Byte"
         }
     }
 
     Context "New-JwtSignature" {
-
-        # $encodedThumbprint = ConvertTo-Base64UrlEncodedString -Bytes $signingCertificate.GetCertHash()
-
-        $header = "eyJ0eXAiOiJKV1QiLCJ4NXQiOiI5M2Roem5POW16aWo5TW84QmROcmFLUEt2cVEiLCJraWQiOiI5M2Roem5POW16aWo5TW84QmROcmFLUEt2cVEiLCJhbGciOiJSUzI1NiJ9"
-        $payload = "eyJzdWIiOiJmaXJzdG5hbWUubGFzdG5hbWVAY29tcGFueS5jb20iLCJyb2xlIjoiYWRtaW4iLCJzdGF0ZSI6IkNBIn0"
-        $jwtSansSig = "{0}.{1}" -f $header, $payload
-
-        $expectedSha256Value = "gH5cu09r23UZdIsuBhUIlQ_3FmarqR8WuO72FXL1J65xiBFclfHrJZDQRf-KLk2dB2kMvGLrwNiYQp4JoAtmIh1ywZ4P34ZxFrqQj2U91Uu7et7I7z8qzlKyqSU-hO1vOz38-WSmtyui2FLUtSfhQvv3EiQQWfWxe84NPgMjfk2Qlj9UOQVGF5l-gsXdkFm8SeBf3hIsFPfd0OwgRtS2IXu2LpARZnIH7u-LavWVvLBEFs_4K1bGMuvSHypXkmBWbQ4lG6x_dA8mw1Cqp0NlDs7zZSZS67hSTKKVsdzhzkupK7eYRUtWm6K8Yx7QEt5Zvo5I37dpkIuCVp9ezPbACA"
-        $expectedSha384Value =  "O1og6o8nuf-HyEcUj2eAGbIfzTmIx6F9Z5cFkUl3XoF05E1seQLPJbVQIlKgPe3FNuqzUUgMN8jHFjW4rO9D5koRNptGS3w08iSLC_CGi85Drv5uf95GSpyTcmHuSX_mXgQLeLoYDVkRF2xzfL5LTi8psjZxVywj92dGEtjYu8aqiGCFlyygOVHvITYPC_nBNSABNOQCh5SZm3vgDSRH1SELP81xCEgL4fknZes80u6nDvw4ulrgRLjdVdEbQu2IKQsQZRlI8wEHgM67Zl-UdxofzjgWEx6g-YZfeupPA_2D9_TBXPpFrdrI-fRDcciuDbTaxf6meN4rlxv5OIA5Zw"
-        $expectedSha512Value = "eIU3f0iBjx9R3UBAC53PJxyRvu9fSTKgM-1u9ONnNewAkajkPY6DO1sY9G8E-4q7uOL-2T1TWhk3rgVMOyc0elV745X9RlQf7ev46UpkzVnFaAZ-bU1khudAReRgn1fayQFxiVcxxiPYYu4CGVx6LbReqPaM1ZtKvL4P6rjkuttTTFe2EQ6hCEKmDKmI3spLU16Uscae9j_7wcO1iqMEjVguzZu9H8p27JM_5nTaURsp4p2f_TIxXcu7yeJ2T-41XiOyrpj9Hy8Oyb6s_hmlu0fq9kIwXTKemk6X5-cAomYtREhYP9mjomTuJyDNUGHZIYE9CAh0OUSamxRvzyUiXQ"
-
-        It "should produce the correct RS256 signature" {
-            $sig = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -SigningCertificate $signingCertificate
-
-            $sig | Should -Be $expectedSha256Value
-        }
-
-        It "should produce the correct RS384 signature" {
-            $sig = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA384 -SigningCertificate $signingCertificate
-
-            $sig | Should -Be $expectedSha384Value
-        }
-
-        It "should produce the correct RS512 signature" {
-            $sig = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA512 -SigningCertificate $signingCertificate
-
-            $sig | Should -Be $expectedSha512Value
-        }
-
         It "should produce a HMAC-SHA256 signature" {
             $header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
             $payload = "eyJzdWIiOiJtZUBjb21wYW55LmNvbSJ9"
@@ -340,16 +293,6 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $payload = 'bbbbbbbbbbbbbbbbbbbbb'
             $jwtSansSig = "{0}.{1}" -f $header, $payload
             { New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" -SkipJwtStructureTest } | Should Not Throw
-        }
-    }
-
-    Context "ConvertFrom-EncodedJsonWebToken" {
-        It "should decode the x5t into the X509 certificate thumbprint" {
-            $jwt = New-JsonWebToken -Claims @{sub="test@domain.com"} -SigningCertificate $signingCertificate -HashAlgorithm SHA256 -TimeToLive 300
-
-            $result = ConvertFrom-EncodedJsonWebToken -JsonWebToken $jwt
-
-            $signingCertificate.Thumbprint -eq $result.SigningCertificateThumbprint | Should -Be True
         }
     }
 
@@ -382,9 +325,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
             $exp = Convert-DateTimeToEpoch -DateTime (Get-Date).AddHours(1)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -398,9 +341,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
         It "should throw an exception when token has no exp claim" {
             $key = "secret"
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony"} | ConvertTo-JwtPart
+            $payload = @{sub = "tony" } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -409,12 +352,10 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $jws = "{0}.{1}" -f $jwt, $sig
 
             [bool]$throwsException = $false
-            try
-            {
+            try {
                 Test-JwtDateRange -JsonWebToken $jws -ErrorAction Stop | Out-Null
             }
-            catch
-            {
+            catch {
                 $throwsException = $true
             }
 
@@ -430,9 +371,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
             $exp = Convert-DateTimeToEpoch -DateTime $now.AddHours(1)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";nbf=$nbf;exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -452,9 +393,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
             $exp = Convert-DateTimeToEpoch -DateTime $now.AddHours(1)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";nbf=$nbf;exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -470,9 +411,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
             $exp = Convert-DateTimeToEpoch -DateTime (Get-Date).AddMinutes(-1)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -491,9 +432,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $iat = Convert-DateTimeToEpoch -DateTime $now
             $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";iat=$iat;exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; iat = $iat; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -512,9 +453,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $nbf = Convert-DateTimeToEpoch -DateTime $now
             $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";nbf=$nbf;exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -533,9 +474,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $iat = Convert-DateTimeToEpoch -DateTime $now
             $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(2)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";iat=$iat;exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; iat = $iat; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -554,9 +495,9 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $nbf = Convert-DateTimeToEpoch -DateTime $now
             $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(2)
 
-            $header = [ordered]@{typ="JWT";alg="HS256"} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $payload = @{sub="tony";nbf=$nbf;exp=$exp} | ConvertTo-JwtPart
+            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
             $jwt = "{0}.{1}" -f $header, $payload
 
@@ -567,6 +508,4 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             Test-JwtDateRange -JsonWebToken $jws | Should -Be True
         }
     }
-
-
 }
