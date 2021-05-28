@@ -1,6 +1,5 @@
-function Test-JsonWebToken
-{
-<#
+function Test-JsonWebToken {
+    <#
     .SYNOPSIS
         Validates a JSON Web Token.
     .DESCRIPTION
@@ -13,7 +12,7 @@ function Test-JsonWebToken
         The certificate containing the public key that will be used to verify the signature of the JSON Web Token.
     .PARAMETER Key
         The secret key used to validate an HMAC signature expressed as a string.
-    .PARAMETER SecretKey
+    .PARAMETER SecureKey
         The secret key used to validate an HMAC signature expressed as a System.Security.SecureString.
     .PARAMETER JsonWebKey
         The JSON Web Key (X509 certificate public key) to verify the signature of the JSON Web Token per RFC 7517.
@@ -72,246 +71,204 @@ function Test-JsonWebToken
     [Alias('tjwt', 'ValidateJwt')]
     [OutputType([System.Boolean])]
     Param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
-        [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)]
+        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
 
-        [Parameter(Mandatory=$false,Position=2)]
-        [ValidateSet("SHA256","SHA384","SHA512")]
-        [String]$HashAlgorithm="SHA256",
+        [Parameter(Mandatory = $false, Position = 2)]
+        [ValidateSet("SHA256", "SHA384", "SHA512")]
+        [String]$HashAlgorithm = "SHA256",
 
-        [Parameter(Mandatory=$true,ParameterSetName="RSA",Position=3)][Alias("Certificate", "Cert")]
+        [Parameter(Mandatory = $true, ParameterSetName = "RSA", Position = 3)][Alias("Certificate", "Cert")]
         [ValidateNotNullOrEmpty()][System.Security.Cryptography.X509Certificates.X509Certificate2]$VerificationCertificate,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=3)]
-        [ValidateLength(4,32768)]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 3)]
+        [ValidateLength(4, 32768)]
         [String]$Key,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMACSecure",Position=3)]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 3)]
         [ValidateNotNullOrEmpty()]
         [System.Security.SecureString]$SecureKey,
 
-        [Parameter(Mandatory=$true,ParameterSetName="JWK",Position=3)][Alias("jwk")][ValidateLength(12, 1073741791)][String]$JsonWebKey,
+        [Parameter(Mandatory = $true, ParameterSetName = "JWK", Position = 3)][Alias("jwk")][ValidateLength(12, 1073741791)][String]$JsonWebKey,
 
-        [Parameter(Mandatory=$true,ParameterSetName="URI",Position=3)][Alias('OidcUri','JwkUri')][System.Uri]$Uri,
+        [Parameter(Mandatory = $true, ParameterSetName = "URI", Position = 3)][Alias('OidcUri', 'JwkUri')][System.Uri]$Uri,
 
-        [Parameter(Mandatory=$false,Position=4)]
+        [Parameter(Mandatory = $false, Position = 4)]
         [Switch]$SkipExpirationCheck
-        )
-        BEGIN
-        {
-            $decodeExceptionMessage = "Unable to decode JWT."
-            $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
+    )
+    BEGIN {
+        $decodeExceptionMessage = "Unable to decode JWT."
+        $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
+    }
+    PROCESS {
+        [bool]$jwtIsValid = $false
+        [bool]$signatureIsValid = $false
+        [bool]$tokenIsNotExpired = $false
+
+        [bool]$hasValidJwtStructure = Test-JwtStructure -JsonWebToken $JsonWebToken -VerifySignaturePresent
+        if (-not($hasValidJwtStructure)) {
+            Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
-        PROCESS
-        {
-            [bool]$jwtIsValid = $false
-            [bool]$signatureIsValid = $false
-            [bool]$tokenIsNotExpired = $false
 
-            [bool]$hasValidJwtStructure = Test-JwtStructure -JsonWebToken $JsonWebToken -VerifySignaturePresent
-            if (-not($hasValidJwtStructure))
-            {
-                Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
+        [string]$missingDateExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
+
+        # Verbose messages:
+        [string]$sigValidMessage = "Signature was verified."
+        [string]$sigInvalidMessage = "Signature was not verified."
+        [string]$dateRangedValidMessage = "JWT date range is valid."
+        [string]$dateRangedNotValidMessage = "JWT is expired."
+
+        $headerTable = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken
+        if ($null -ne $headerTable["kid"]) {
+            $kid = $headerTable["kid"]
+            $kidMessage = "Identifier of the signing key for the JWT: {0}" -f $kid
+            Write-Verbose -Message $kidMessage
+        }
+
+        if ($PSCmdlet.ParameterSetName -eq "RSA") {
+            try {
+                $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -VerificationCertificate $VerificationCertificate -ErrorAction Stop
+            }
+            catch {
+                Write-Error -Exception $_ -Category InvalidResult -ErrorAction Stop
             }
 
-            [string]$missingDateExceptionMessage = "Unable to validate token lifetime due to missing exp claim in payload. If signature validation only is required use the SkipExpirationCheck parameter."
+            if ($PSBoundParameters.ContainsKey("SkipExpirationCheck")) {
+                $jwtIsValid = $signatureIsValid
+            }
+            else {
+                [bool]$tokenIsNotExpired = $false
+                try {
+                    $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
+                }
+                catch {
+                    $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
+                    Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
+                }
 
-            # Verbose messages:
-            [string]$sigValidMessage = "Signature was verified."
-            [string]$sigInvalidMessage = "Signature was not verified."
-            [string]$dateRangedValidMessage = "JWT date range is valid."
-            [string]$dateRangedNotValidMessage = "JWT is expired."
-
-            $headerTable = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken
-            if ($null -ne $headerTable["kid"])
-            {
-                $kid = $headerTable["kid"]
-                $kidMessage = "Identifier of the signing key for the JWT: {0}" -f $kid
-                Write-Verbose -Message $kidMessage
+                $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
+            }
+        }
+        elseif ($PSCmdlet.ParameterSetName -eq "JWK") {
+            try {
+                $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $JsonWebKey -ErrorAction Stop
+            }
+            catch {
+                Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
             }
 
-            if ($PSCmdlet.ParameterSetName -eq "RSA")
-            {
-                try
-                {
-                    $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -VerificationCertificate $VerificationCertificate -ErrorAction Stop
+            if ($PSBoundParameters.ContainsKey("SkipExpirationCheck")) {
+                $jwtIsValid = $signatureIsValid
+            }
+            else {
+                [bool]$tokenIsNotExpired = $false
+                try {
+                    $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
                 }
-                catch
-                {
-                    Write-Error -Exception $_ -Category InvalidResult -ErrorAction Stop
+                catch {
+                    $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
+                    Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
                 }
 
-                if ($PSBoundParameters.ContainsKey("SkipExpirationCheck"))
-                {
-                    $jwtIsValid = $signatureIsValid
-                }
-                else
-                {
-                    [bool]$tokenIsNotExpired = $false
-                    try
-                    {
-                        $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
+                $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
+            }
+        }
+        elseif ($PSCmdlet.ParameterSetName -eq "URI") {
+            $jsonWebKeys = @()
+            try {
+                $jsonWebKeys += (Get-JwkCollection -Uri $Uri -AsJson -ErrorAction Stop)
+            }
+            catch {
+                Write-Error -Exception $_.Exception -ErrorAction Stop
+            }
+
+            foreach ($jwk in $jsonWebKeys) {
+                try {
+                    if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $jwk -ErrorAction Stop) {
+                        $signatureIsValid = $true
+                        $jwkValidMessage = "Verified signature against the following JWK: {0}" -f $jwk
+                        Write-Verbose -Message $jwkValidMessage
+                        break
                     }
-                    catch
-                    {
-                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
-                        Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
+                    else {
+                        $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $jwk
+                        Write-Verbose -Message $jwkInvalidMessage
                     }
-
-                    $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
                 }
-            }
-            elseif ($PSCmdlet.ParameterSetName -eq "JWK")
-            {
-                try
-                {
-                    $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $JsonWebKey -ErrorAction Stop
-                }
-                catch
-                {
+                catch {
                     Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
                 }
-
-                if ($PSBoundParameters.ContainsKey("SkipExpirationCheck"))
-                {
-                    $jwtIsValid = $signatureIsValid
-                }
-                else
-                {
-                    [bool]$tokenIsNotExpired = $false
-                    try
-                    {
-                        $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
-                    }
-                    catch
-                    {
-                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
-                        Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
-                    }
-
-                    $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
-                }
             }
-            elseif ($PSCmdlet.ParameterSetName -eq "URI")
-            {
-                $jsonWebKeys = @()
-                try
-                {
-                    $jsonWebKeys += (Get-JwkCollection -Uri $Uri -AsJson -ErrorAction Stop)
-                }
-                catch
-                {
-                    Write-Error -Exception $_.Exception -ErrorAction Stop
-                }
 
-                foreach ($jwk in $jsonWebKeys)
-                {
-                    try
-                    {
-                        if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $jwk -ErrorAction Stop)
-                        {
-                            $signatureIsValid = $true
-                            $jwkValidMessage = "Verified signature against the following JWK: {0}" -f $jwk
-                            Write-Verbose -Message $jwkValidMessage
-                            break
-                        }
-                        else
-                        {
-                            $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $jwk
-                            Write-Verbose -Message $jwkInvalidMessage
-                        }
-                    }
-                    catch
-                    {
-                        Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
-                    }
-                }
-
-                if ($PSBoundParameters.ContainsKey("SkipExpirationCheck"))
-                {
-                    $jwtIsValid = $signatureIsValid
-                }
-                else
-                {
-                    [bool]$tokenIsNotExpired = $false
-                    try
-                    {
-                        $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
-                    }
-                    catch
-                    {
-                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
-                        Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
-                    }
-
-                    $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
-                }
-
+            if ($PSBoundParameters.ContainsKey("SkipExpirationCheck")) {
+                $jwtIsValid = $signatureIsValid
             }
-            else # Parameter set is HMAC of HMACSecure
-            {
-                [string]$hmacKey = ""
-                if ($PSCmdlet.ParameterSetName -eq "HMACSecure")
-                {
-                    $networkCredential = [System.Net.NetworkCredential]::new("", $SecureKey)
-                    $hmacKey = $networkCredential.Password
+            else {
+                [bool]$tokenIsNotExpired = $false
+                try {
+                    $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
                 }
-                else
-                {
-                    $hmacKey = $Key
+                catch {
+                    $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
+                    Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
                 }
 
-                try
-                {
-                    $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -Key $hmacKey -ErrorAction Stop
+                $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
+            }
+
+        }
+        else { # Parameter set is HMAC or HMACSecure
+
+            if ($PSCmdlet.ParameterSetName -eq "HMACSecure") {
+                try {
+                    $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -SecureKey $SecureKey -ErrorAction Stop
                 }
-                catch
-                {
+                catch {
                     Write-Error -Exception $_ -Category InvalidResult -ErrorAction Stop
                 }
-
-                if ($PSBoundParameters.ContainsKey("SkipExpirationCheck"))
-                {
-                    $jwtIsValid = $signatureIsValid
+            }
+            else {
+                try {
+                    $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -Key $Key -ErrorAction Stop
                 }
-                else
-                {
-                    [bool]$tokenIsNotExpired = $false
-                    try
-                    {
-                        $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
-                    }
-                    catch
-                    {
-                        $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
-                        Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
-                    }
-
-                    $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
+                catch {
+                    Write-Error -Exception $_ -Category InvalidResult -ErrorAction Stop
                 }
             }
 
-            if (-not($PSBoundParameters.ContainsKey("SkipExpirationCheck")))
-            {
-                if ($tokenIsNotExpired)
-                {
-                    Write-Verbose -Message $dateRangedValidMessage
+            if ($PSBoundParameters.ContainsKey("SkipExpirationCheck")) {
+                $jwtIsValid = $signatureIsValid
+            }
+            else {
+                [bool]$tokenIsNotExpired = $false
+                try {
+                    $tokenIsNotExpired = Test-JwtDateRange -JsonWebToken $JsonWebToken -ErrorAction Stop
                 }
-                else
-                {
-                    Write-Verbose -Message $dateRangedNotValidMessage
+                catch {
+                    $ArgumentException = New-Object -TypeName System.ArgumentException -Argument $missingDateExceptionMessage
+                    Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
                 }
-            }
 
-            if ($signatureIsValid)
-            {
-                Write-Verbose -Message $sigValidMessage
+                $jwtIsValid = $signatureIsValid -and $tokenIsNotExpired
             }
-            else
-            {
-                Write-Verbose -Message $sigInvalidMessage
-            }
-
-            return $jwtIsValid
         }
+
+        if (-not($PSBoundParameters.ContainsKey("SkipExpirationCheck"))) {
+            if ($tokenIsNotExpired) {
+                Write-Verbose -Message $dateRangedValidMessage
+            }
+            else {
+                Write-Verbose -Message $dateRangedNotValidMessage
+            }
+        }
+
+        if ($signatureIsValid) {
+            Write-Verbose -Message $sigValidMessage
+        }
+        else {
+            Write-Verbose -Message $sigInvalidMessage
+        }
+
+        return $jwtIsValid
+    }
 }
