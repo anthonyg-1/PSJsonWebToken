@@ -1,6 +1,5 @@
-function Test-JwtSignature
-{
-<#
+function Test-JwtSignature {
+    <#
     .SYNOPSIS
         Validates a JSON Web Token digital signature.
     .DESCRIPTION
@@ -13,13 +12,21 @@ function Test-JwtSignature
         The certificate that will be used to verify the signature of the JSON Web Token. The private key is NOT needed for signature verification.
     .PARAMETER Key
         This is the secret key used to generate an HMAC signature.
+    .PARAMETER SecureKey
+        The secret key used to validate an HMAC signature expressed as a System.Security.SecureString.
     .PARAMETER JsonWebKey
         The JSON Web Key (X509 certificate public key) to verify the signature of the JSON Web Token per RFC 7517.
     .EXAMPLE
         $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI4QzVkRTlFMDNBNTQ0MDVBQkI2QmEyNDJENjI5MDU0MiIsImlhdCI6MTU5MjU4MTA4OSwiZXhwIjoxNTkyNTgxMzg5LCJzdWIiOiJtZUBjb21wYW55LmNvbSJ9.PkfNMxLIk0qaynr373qxgWR8lTNE5BLApFYhcG3TpK0"
         Test-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key "secret"
 
-        Verifies a digital signature for an HAMC signed JSON Web Token against a key with a value of 'secret' (minus the quotes).
+        Verifies a digital signature for an HMAC-SHA256 signed JSON Web Token against a key with a value of 'secret' (minus the quotes).
+    .EXAMPLE
+        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI4QzVkRTlFMDNBNTQ0MDVBQkI2QmEyNDJENjI5MDU0MiIsImlhdCI6MTU5MjU4MTA4OSwiZXhwIjoxNTkyNTgxMzg5LCJzdWIiOiJtZUBjb21wYW55LmNvbSJ9.PkfNMxLIk0qaynr373qxgWR8lTNE5BLApFYhcG3TpK0"
+        $secureKey = "secret" | ConvertTo-SecureString -AsPlainText -Force
+        Test-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -SecureKey $secureKey
+
+        # Verifies a digital signature for an HMAC-SHA256 signed JSON Web Token against a key with a value of 'secret' expressed as a System.Security.SecureString.
 	.EXAMPLE
         $cert = Get-Item -Path "Cert:\CurrentUser\My\B31F009EEEEDDFAE34E977626E5A902600CF118C"
         $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InN4OEFudTd0MzY0MDZYZGlibHFRSmdEUEVZdyIsIng1dCI6InN4OEFudTd0MzY0MDZYZGlibHFRSmdEUEVZdyJ9.eyJzdWIiOiJtZUBjb21wYW55LmNvbSIsImp0aSI6Ijk4NWQyNGNDOTZDMjQxMTA5N0E3NjAzMGY1OTM4RGQzIiwiaWF0IjoxNTkyNTgwOTA1LCJuYmYiOjE1OTI1ODA5MDUsImV4cCI6MTU5MjU4MTIwNX0.whJap3yJIYLIZ4BrK4tVHQVARGstI_omkoo2odOaSpTXZRh104Kyv7J3kiRPaNWKM7t_rpEVylmX-rzY_k_-d7auysVgQL2d-xNa8ZJGmjEemniPy2qRjbpdKDONlija7sbt_7E2n6_0kiwOiu31NemVr1EoWnpGLQeSfgjExuQPHatoKmi5UfijG0P4pWeo3xYyukYE14XOVGYI0ym3yl7gh7YUq9YkKZHvnMulzUoXWImZQ3_0ihC4CwD7QfqKbBuYGCAFtfJ55WHc_iX9EjgVS69aPLIciQmRtvr-xkVG4QApKTLb5NS5dJHKwVxvDojb2OBH5bQM5PMGxpRcIA"
@@ -53,89 +60,92 @@ function Test-JwtSignature
     [CmdletBinding()]
     [OutputType([System.Boolean])]
     Param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
-        [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)]
+        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
 
-        [Parameter(Mandatory=$true,Position=1)][ValidateSet("SHA256","SHA384","SHA512")][String]$HashAlgorithm,
+        [Parameter(Mandatory = $true, Position = 1)][ValidateSet("SHA256", "SHA384", "SHA512")][String]$HashAlgorithm,
 
-        [Parameter(Mandatory=$true,ParameterSetName="RSA",Position=2)][Alias("Certificate", "Cert")]
+        [Parameter(Mandatory = $true, ParameterSetName = "RSA", Position = 2)][Alias("Certificate", "Cert")]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$VerificationCertificate,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=2)][ValidateLength(4,32768)][String]$Key,
+        [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 2)]
+        [ValidateLength(4, 32768)]
+        [String]$Key,
 
-        [Parameter(Mandatory=$true,ParameterSetName="JWK",Position=2)][Alias("jwk")][ValidateLength(12, 1073741791)][String]$JsonWebKey
-        )
+        [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 2)]
+        [ValidateNotNullOrEmpty()]
+        [System.Security.SecureString]$SecureKey,
 
-        BEGIN
-        {
-            $decodeExceptionMessage = "Unable to decode JWT."
-            $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
+        [Parameter(Mandatory = $true, ParameterSetName = "JWK", Position = 2)][Alias("jwk")][ValidateLength(12, 1073741791)][String]$JsonWebKey
+    )
+
+    BEGIN {
+        $decodeExceptionMessage = "Unable to decode JWT."
+        $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
+    }
+    PROCESS {
+        [bool]$signatureVerifies = $false
+
+        [bool]$isValidJwt = Test-JwtStructure -JsonWebToken $JsonWebToken -VerifySignaturePresent
+
+        if (-not($isValidJwt)) {
+            Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
-        PROCESS
-        {
-            [bool]$signatureVerifies = $false
 
-            [bool]$isValidJwt = Test-JwtStructure -JsonWebToken $JsonWebToken -VerifySignaturePresent
 
-            if (-not($isValidJwt))
-            {
-                Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
+        if ($PSCmdlet.ParameterSetName -eq "RSA") {
+            if ($null -ne $VerificationCertificate.PrivateKey.KeyExchangeAlgorithm) {
+                Write-Warning -Message "It is not necessary to perform signature verification with a certificate that has private key!"
+            }
+
+            try {
+                $signatureVerifies = Test-JwtRsaSignature -JsonWebToken $JsonWebToken -VerificationCertificate $VerificationCertificate -HashAlgorithm $HashAlgorithm -ErrorAction Stop
+            }
+            catch {
+                Write-Error -Exception $_.Exception -ErrorAction Stop
+            }
+        }
+        elseif ($PSCmdlet.ParameterSetName -eq "JWK") {
+            try {
+                $signatureVerifies = Test-JwtJwkSignature -JsonWebToken $JsonWebToken -JsonWebKey $JsonWebKey -HashAlgorithm SHA256 -ErrorAction Stop
+            }
+            catch {
+                Write-Error -Exception $_.Exception -ErrorAction Stop
+            }
+
+        }
+        else {
+            # Parameter set is HMAC or HMACSecure
+            [string]$hmacKey = ""
+            if ($PSCmdlet.ParameterSetName -eq "HMACSecure") {
+                $networkCredential = [System.Net.NetworkCredential]::new("", $SecureKey)
+                $hmacKey = $networkCredential.Password
+            }
+            else {
+                $hmacKey = $Key
             }
 
             $jwtHeader = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken -AsEncodedString
             $jwtPayload = Get-JsonWebTokenPayload -JsonWebToken $JsonWebToken -AsEncodedString
             $jwtSig = Get-JsonWebTokenSignature -JsonWebToken $JsonWebToken -AsEncodedString
 
-            $jwt = "{0}.{1}" -f $jwtHeader, $jwtPayload
+            $jwtNoSig = "{0}.{1}" -f $jwtHeader, $jwtPayload
 
-            if ($PSCmdlet.ParameterSetName -eq "HMAC")
-            {
-                [string]$hmacSig = ""
-                try
-                {
-                    $hmacSig = New-JwtSignature -JsonWebToken $jwt -Key $Key -HashAlgorithm $HashAlgorithm -ErrorAction Stop
-                }
-                catch
-                {
-                    $signatureExceptionMessage = "Unable to generate signature for given header and payload."
-                    $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $signatureExceptionMessage
-                    Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
-                }
-
-                if ($hmacSig -eq $jwtSig)
-                {
-                    $signatureVerifies = $true
-                }
+            [string]$hmacSig = ""
+            try {
+                $hmacSig = New-JwtSignature -JsonWebToken $jwtNoSig -Key $hmacKey -HashAlgorithm $HashAlgorithm -ErrorAction Stop
             }
-            elseif ($PSCmdlet.ParameterSetName -eq "RSA")
-            {
-                if ($null -ne $VerificationCertificate.PrivateKey.KeyExchangeAlgorithm)
-                {
-                    Write-Warning -Message "It is not necessary to perform signature verification with a certificate that has private key!"
-                }
-
-                try
-                {
-                    $signatureVerifies = Test-JwtRsaSignature -JsonWebToken $JsonWebToken -VerificationCertificate $VerificationCertificate -HashAlgorithm $HashAlgorithm -ErrorAction Stop
-                }
-                catch
-                {
-                    Write-Error -Exception $_.Exception -ErrorAction Stop
-                }
-            }
-            else # ParameterSetName -eq JWK
-            {
-                try
-                {
-                    $signatureVerifies = Test-JwtJwkSignature -JsonWebToken $JsonWebToken -JsonWebKey $JsonWebKey -HashAlgorithm SHA256 -ErrorAction Stop
-                }
-                catch
-                {
-                    Write-Error -Exception $_.Exception -ErrorAction Stop
-                }
-
+            catch {
+                $signatureExceptionMessage = "Unable to generate signature for given header and payload."
+                $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $signatureExceptionMessage
+                Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
             }
 
-            return $signatureVerifies
+            if ($hmacSig -eq $jwtSig) {
+                $signatureVerifies = $true
+            }
         }
+
+        return $signatureVerifies
+    }
 }
