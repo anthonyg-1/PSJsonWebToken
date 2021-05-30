@@ -12,10 +12,8 @@ This PowerShell module contains functions to create, validate, and test JSON Web
 
 ### Installation and Usage
 
-Installing the module.
-
 ```powershell
-# Install module
+# Installing the module:
 Install-Module -Name PSJsonWebToken -Scope CurrentUser -Repository PSGallery -AllowClobber
 ```
 
