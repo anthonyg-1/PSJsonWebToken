@@ -10,7 +10,7 @@ This PowerShell module contains functions to create, validate, and test JSON Web
 :apple: `MacOS`  
   
 
-## Installation and Usage
+### Installation and Usage
 
 Installing the module.
 
