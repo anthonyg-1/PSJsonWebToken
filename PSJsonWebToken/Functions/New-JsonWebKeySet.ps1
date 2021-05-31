@@ -52,59 +52,20 @@ function New-JsonWebKeySet {
     PROCESS {
         [string]$jwkSet = ""
 
-        $encodedThumbprint = ConvertTo-Base64UrlEncodedString -Bytes ($Certificate.GetCertHash())
-
-        [string]$publicKeyUse = ""
-        switch ($KeyOperations) {
-            "Verification" { $publicKeyUse = "sig" }
-            "Encryption" { $publicKeyUse = "enc" }
-            default { $publicKeyUse = "sig" }
-        }
-
-        $X509CertificateChain = [List[String]]::new()
         if ($PSBoundParameters.ContainsKey("IncludeChain")) {
-            [X509Chain]$certChain = [X509Chain]::new()
-            $certChain.Build($Certificate) | Out-Null
-
-            foreach ($chainElement in $certChain.ChainElements) {
-                $rawData = $chainElement.Certificate.RawData
-                $base64 = [Convert]::ToBase64String($rawData)
-                $X509CertificateChain.Add($base64)
-            }
+            $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations -IncludeChain
         }
         else {
-            $rawData = $Certificate.RawData
-            $base64 = [Convert]::ToBase64String($rawData)
-            $X509CertificateChain.Add($base64)
+            $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations
         }
 
-        $key = $Certificate.PublicKey.Key
-
-        if ($null -ne $key) {
-            [RSAParameters]$parameters = $key.ExportParameters($false)
-            [byte[]]$exp = $parameters.Exponent
-            [byte[]]$mod = $parameters.Modulus
-
-            [string]$encodedExponent = ConvertTo-Base64UrlEncodedString -Bytes $exp
-            [string]$encodedModulus = ConvertTo-Base64UrlEncodedString -Bytes $mod
-        }
-
-        $jwkTable = [ordered]@{kty = "RSA"
-            use                    = $publicKeyUse
-            e                      = $encodedExponent
-            n                      = $encodedModulus
-            kid                    = $encodedThumbprint
-            x5t                    = $encodedThumbprint
-            x5c                    = $X509CertificateChain
-        }
-
-        $jwkSetTable = [ordered]@{keys = $jwkTable}
+        $jwkSetObject = @{keys = $jwkObject }
 
         if ($PSBoundParameters.ContainsKey("Compress")) {
-            $jwkSet = $jwkSetTable | ConvertTo-Json -Compress
+            $jwkSet = $jwkSetObject | ConvertTo-Json -Compress
         }
         else {
-            $jwkSet = $jwkSetTable | ConvertTo-Json
+            $jwkSet = $jwkSetObject | ConvertTo-Json
         }
 
         return $jwkSet
