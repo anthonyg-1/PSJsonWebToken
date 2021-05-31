@@ -42,7 +42,7 @@
 
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$false,
-                   Position=0)][Switch]$AsJson
+                   Position=1)][Switch]$AsJson
     )
     PROCESS
     {
