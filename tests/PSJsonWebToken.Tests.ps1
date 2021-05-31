@@ -229,6 +229,37 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
         }
     }
 
+    Context 'New-JsonWebKey' {
+        $base64Cert = 'MIIDYTCCAkmgAwIBAgIIb8nnhta1VXswDQYJKoZIhvcNAQELBQAwKDEmMCQGA1UEAxMdRk0gR2xvYmFsIElzc3VpbmcgQXV0aG9yaXR5IDIwHhcNMjAwNjEyMTMwNTAxWhcNMjEwODExMjMxMjUwWjA4MSEwHwYDVQQLExhEb21haW4gQ29udHJvbCBWYWxpZGF0ZWQxEzARBgNVBAMMCiouaWV0Zi5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDC1dBb17fWfCyrm0RJUtAE0sd3lqAn8IYUWN+xF8T5u2OVrlj9SoCLLPiugPo2+hFGjuLqFKYTxd2wJUKCKQHde/ZmuQarxcLqTBIT4LLNp9ttSfeuAtz6lCR/MjrEUUvyTzWY2+yW7jyQ3TN2Z3D9JEqpWWJPIZHohaApyZSyFmqL3+Obi5pI5l6336snV/QpeAPAwtUDT5afEGsofIjwhwX01YESk1ppmq2Vr3HilkHK8tp+FTPci2hz6jfSR3JTZc9OODx07t+lEeTRbfSUfddYNNafkCpt7hhB6w+o7khj8VpWkAp7xQ8xPfpSFew8XNmIETYsMA9B/zRcE/87AgMBAAGjfzB9MAwGA1UdEwEB/wQCMAAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA4GA1UdDwEB/wQEAwIFoDAfBgNVHREEGDAWggoqLmlldGYub3JngghpZXRmLm9yZzAdBgNVHQ4EFgQUBv4Lq9jmdG78xHMChfepSH7RNE8wDQYJKoZIhvcNAQELBQADggEBAE1iQcmOGqZczuZLu71E65jfgw7yFtJvHudniiSDNBxLZEAB5E04Xg9Z39R4MPt5AWKqirx3hV6yKBaz4bmazvnthCzBOol1sS1Gc0bv1yjx3ixJUc7wwMUvJEMZpPm7HKDnDhKwSTbpvg4qokVWlFEHe09oLv0EuIfCM+/nOMR0vJertSPoQ1r3FPweOmdnTspUwuPVLz1uu9xQNIvaYC/8LCejuQaNstmYkZj+SJaZRiP7szr0MPPPrUQj7Taah7yvMOdoprlz6NQAIZvtwE90/GlRQUgG2yRjpHcCkg+eT8qUZyPeM28tqwLmUfTleg1/bmfvytEoGFTZ9gj3tWY='
+
+        [byte[]]$certBytes = [System.Convert]::FromBase64String($base64Cert)
+        [X509Certificate2]$cert = New-Object -TypeName X509Certificate2 -ArgumentList (, $certBytes)
+
+        $jwkObject = $cert | New-JsonWebKey
+
+        $jwk = $cert | New-JsonWebKey -AsJson
+
+        It "should return object by default" {
+            $jwkObject.GetType().Name | Should Be "PSCustomObject"
+        }
+
+        It "should serialize an X509Certficate2 as JSON" {
+            [bool]$itSerializes = $false
+
+            try {
+                $jwk | ConvertFrom-Json -ErrorAction Stop | Out-Null
+                $itSerializes = $true
+            }
+            catch {
+                $itSerializes = $false
+            }
+
+            $itSerializes | Should -Be True
+        }
+
+
+    }
+
     Context "ConvertTo-JwtPart" {
         It "should convert a Hashtable into a base64 URL encoded JSON string" {
             $claims = [ordered]@{sub = "tony"; office = "RI"; country = "US" }
