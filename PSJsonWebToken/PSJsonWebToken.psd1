@@ -12,7 +12,7 @@
     RootModule        = '.\PSJsonWebToken.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.7.1'
+    ModuleVersion     = '1.7.2'
 
     # ID used to uniquely identify this module
     GUID              = '75bb4722-7360-4260-be02-20e413528df2'
