@@ -104,6 +104,11 @@ function New-JsonWebKey {
             [string]$encodedExponent = ConvertTo-Base64UrlEncodedString -Bytes $exp
             [string]$encodedModulus = ConvertTo-Base64UrlEncodedString -Bytes $mod
         }
+        else {
+            $noKeyExceptionMessage = "Unable to obtain public key from supplied certificate."
+            $CryptographicException = [CryptographicException]::new($noKeyExceptionMessage)
+            Write-Error -Exception $CryptographicException -Category SecurityError -ErrorAction Stop
+        }
 
         $jwkObject = [PSCustomObject][ordered]@{kty = "RSA"
             use                                     = $publicKeyUse
