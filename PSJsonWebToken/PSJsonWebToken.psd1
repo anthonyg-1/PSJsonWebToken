@@ -12,7 +12,7 @@
     RootModule        = '.\PSJsonWebToken.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.7.3'
+    ModuleVersion     = '1.7.4'
 
     # ID used to uniquely identify this module
     GUID              = '75bb4722-7360-4260-be02-20e413528df2'
@@ -30,22 +30,16 @@
     FunctionsToExport = 'ConvertTo-Base64UrlEncodedString', 'ConvertFrom-Base64UrlEncodedString', 'New-JwtSignature', 'New-JsonWebToken', 'Test-JsonWebToken', 'ConvertFrom-EncodedJsonWebToken', 'New-JsonWebKeySet', 'New-JsonWebKey', 'Get-JsonWebTokenHeader', 'Get-JsonWebTokenPayload', 'Get-JsonWebTokenSignature', 'ConvertTo-JwtPart', 'Test-JwtStructure', 'Test-JwtSignature', 'Convert-DateTimeToEpoch', 'Convert-EpochToDateTime', 'Test-JwtDateRange', 'Convert-X509CertificateToBase64', 'Get-JwkCollection'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = "njwt", "NewJwt", "CreateJwt", "tjwt", "ValidateJwt", "DecodeJwt", "njwks", "CreateJwkSet", "njwk", "CreateJwk", "b64e", "Encode", "b64d", "Decode", "GetEpoch"
+    AliasesToExport   = "njwt", "NewJwt", "CreateJwt", "tjwt", "ValidateJwt", "DecodeJwt", "njwks", "CreateJwkSet", "njwk", "CreateJwk", "b64e", "Encode", "b64d", "Decode", "GetEpoch", "gjwth", "gjwtp", "gjwtsig"
 
     # List of all files packaged with this module
     FileList          = 'PSJsonWebToken.psd1', 'PSJsonWebToken.psm1'
 
     PrivateData       = @{
-
         PSData = @{
-            Tags       = @("jwt", "jwk", "jsonwebtoken", "jsonwebkey")
-
+            Tags       = @("jwt", "jwk", "jsonwebtoken", "jsonwebkey", "oidc", "openidconnect")
             LicenseUri = "https://github.com/anthonyg-1/PSJsonWebToken/blob/main/LICENSE"
-
             ProjectUri = "https://github.com/anthonyg-1/PSJsonWebToken"
-
-        } # End PSData
-
-    } # End PrivateData
-
+        }
+    }
 }
