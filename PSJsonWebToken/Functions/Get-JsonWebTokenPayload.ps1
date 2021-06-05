@@ -1,6 +1,5 @@
-﻿function Get-JsonWebTokenPayload
-{
-<#
+function Get-JsonWebTokenPayload {
+    <#
     .SYNOPSIS
         Gets the JSON Web Token payload from the passed JWT.
     .DESCRIPTION
@@ -13,7 +12,7 @@
         Returns the payload as a JSON string.
     .EXAMPLE
         $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
-        Get-JsonWebTokenPayload -JsonWebToken $jwt
+        $jwt | Get-JsonWebTokenPayload
 
         Returns the payload from the passed JWT as a Hashtable.
     .EXAMPLE
@@ -33,57 +32,50 @@
     .OUTPUTS
         System.Collections.Hashtable or System.String
     .LINK
-		New-JsonWebToken
+	New-JsonWebToken
         Test-JsonWebToken
         Get-JsonWebTokenHeader
         Get-JsonWebTokenSignature
 #>
-    [CmdletBinding(DefaultParameterSetName="Default")]
-    [OutputType([System.Collections.Hashtable],ParameterSetName="Default")]
-    [OutputType([System.String],ParameterSetName="Base64")]
-    [OutputType([System.String],ParameterSetName="JSON")]
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Alias('gjwtp')]
+    [OutputType([System.Collections.Hashtable])]
+    [OutputType([System.String], ParameterSetName = "Base64")]
+    [OutputType([System.String], ParameterSetName = "JSON")]
     Param (
-        [Parameter(ParameterSetName="Base64")]
-        [Parameter(ParameterSetName="JSON")]
-        [Parameter(ParameterSetName="Default",Mandatory=$true,ValueFromPipeline=$true,Position=0)]
-        [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
 
-        [Parameter(ParameterSetName="Base64",Mandatory=$true,
-        ValueFromPipeline=$false,
-        ValueFromPipelineByPropertyName=$false,Position=1)][Alias("AsIs")][switch]$AsEncodedString,
+        [Parameter(ParameterSetName = "Base64", Mandatory = $true,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false, Position = 1)][Alias("AsIs")][switch]$AsEncodedString,
 
-        [Parameter(ParameterSetName="JSON",Mandatory=$true,
-        ValueFromPipeline=$false,
-        ValueFromPipelineByPropertyName=$false,Position=1)][switch]$AsJson
+        [Parameter(ParameterSetName = "JSON", Mandatory = $true,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false, Position = 1)][Alias("json")][switch]$AsJson
     )
 
-    BEGIN
-    {
+    BEGIN {
         $decodeExceptionMessage = "Unable to decode JWT."
         $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
     }
-    PROCESS
-    {
+    PROCESS {
         [bool]$isValidJwt = Test-JwtStructure -JsonWebToken $JsonWebToken
-        if (-not($isValidJwt))
-        {
+        if (-not($isValidJwt)) {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
 
         $jwtPayload = $JsonWebToken.Split(".")[1]
 
-        if ($PSBoundParameters.ContainsKey("AsEncodedString"))
-        {
+        if ($PSBoundParameters.ContainsKey("AsEncodedString")) {
             return $jwtPayload
         }
-        elseif ($PSBoundParameters.ContainsKey("AsJson"))
-        {
+        elseif ($PSBoundParameters.ContainsKey("AsJson")) {
             return $jwtPayload | ConvertFrom-Base64UrlEncodedString
         }
-        else
-        {
+        else {
             [System.Collections.Hashtable]$jwtPayloadTable = $jwtPayload | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | Convert-PSObjectToHashTable
             return $jwtPayloadTable
         }
-     }
+    }
 }
