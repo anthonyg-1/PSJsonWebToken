@@ -280,6 +280,16 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $headerTable.ContainsKey("typ") | Should -Be True
             $headerTable.typ | Should -Be "JWT"
         }
+
+        It "should return a string when using the AsEncodedString parameter" {
+            $output = $jwt | Get-JsonWebTokenHeader -AsEncodedString
+            $output.GetType().Name | Should Be "String"
+        }
+
+        It "should return a string when using the AsJson parameter" {
+            $output = $jwt | Get-JsonWebTokenHeader -AsJson
+            $output.GetType().Name | Should Be "String"
+        }
     }
 
     Context "Get-JsonWebTokenPayload" {
@@ -295,248 +305,258 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $payloadTable.ContainsKey("sub") | Should -Be True
             $payloadTable.sub | Should -Be $subject
         }
-    }
 
-    Context "Get-JsonWebTokenSignature" {
-        It "should convert an encode JWT signature into a byte array" {
-            $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret"
-            $jwt | Get-JsonWebTokenSignature | Get-Member | Select -ExpandProperty TypeName -Unique | Should -Be "System.Byte"
+        It "should return a string when using the AsEncodedString parameter" {
+            $output = $jwt | Get-JsonWebTokenPayload -AsEncodedString
+            $output.GetType().Name | Should Be "String"
+        }
+
+        It "should return a string when using the AsJson parameter" {
+            $output = $jwt | Get-JsonWebTokenPayload -AsJson
+            $output.GetType().Name | Should Be "String"
         }
     }
+}
 
-    Context "New-JwtSignature" {
-        It "should produce a HMAC-SHA256 signature" {
-            $header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
-            $payload = "eyJzdWIiOiJtZUBjb21wYW55LmNvbSJ9"
-            $jwtSansSig = "{0}.{1}" -f $header, $payload
-            New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" | Should -Be "TGCRYv8zTVPG0GeNECR1TByIDjGF9diW06g75afX9pQ"
-        }
+Context "Get-JsonWebTokenSignature" {
+    It "should convert an encode JWT signature into a byte array" {
+        $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret"
+        $jwt | Get-JsonWebTokenSignature | Get-Member | Select -ExpandProperty TypeName -Unique | Should -Be "System.Byte"
+    }
+}
 
-        It "should not produce a signature for an invalid JWT by default" {
-            $header = 'aaaaaaaaaaaaaaaaaaaaa'
-            $payload = 'bbbbbbbbbbbbbbbbbbbbb'
-            $jwtSansSig = "{0}.{1}" -f $header, $payload
-            { New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" } | Should Throw
-        }
-
-        It "should produce a signature for an invalid JWT when using the SkipJwtStructureTest switch" {
-            $header = 'aaaaaaaaaaaaaaaaaaaaa'
-            $payload = 'bbbbbbbbbbbbbbbbbbbbb'
-            $jwtSansSig = "{0}.{1}" -f $header, $payload
-            { New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" -SkipJwtStructureTest } | Should Not Throw
-        }
+Context "New-JwtSignature" {
+    It "should produce a HMAC-SHA256 signature" {
+        $header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
+        $payload = "eyJzdWIiOiJtZUBjb21wYW55LmNvbSJ9"
+        $jwtSansSig = "{0}.{1}" -f $header, $payload
+        New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" | Should -Be "TGCRYv8zTVPG0GeNECR1TByIDjGF9diW06g75afX9pQ"
     }
 
-    Context "Test-JwtStructure" {
-        It "should return true for a schematically valid JWT" {
-            $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
-            Test-JwtStructure -JsonWebToken $jwt -VerifySignaturePresent | Should -Be True
-        }
-
-        It "should return false for a schematically invalid JWT" {
-            $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTYbmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
-            Test-JwtStructure -JsonWebToken $jwt -VerifySignaturePresent | Should -Be False
-        }
-
-        It "should return false for a JWT with a blank signature" {
-            $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTYbmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9."
-            Test-JwtStructure -JsonWebToken $jwt -VerifySignaturePresent | Should -Be False
-        }
-
-        It "should return true for a JWT sans signature when VerifySignaturePresent is not used" {
-            $jwt = $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9"
-            Test-JwtStructure -JsonWebToken $jwt | Should -Be True
-        }
+    It "should not produce a signature for an invalid JWT by default" {
+        $header = 'aaaaaaaaaaaaaaaaaaaaa'
+        $payload = 'bbbbbbbbbbbbbbbbbbbbb'
+        $jwtSansSig = "{0}.{1}" -f $header, $payload
+        { New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" } | Should Throw
     }
 
-    Context 'Test-JwtDateRange' {
+    It "should produce a signature for an invalid JWT when using the SkipJwtStructureTest switch" {
+        $header = 'aaaaaaaaaaaaaaaaaaaaa'
+        $payload = 'bbbbbbbbbbbbbbbbbbbbb'
+        $jwtSansSig = "{0}.{1}" -f $header, $payload
+        { New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -Key "secret" -SkipJwtStructureTest } | Should Not Throw
+    }
+}
 
-        It "should return true for a JWT with exp claim only" {
-            $key = "secret"
+Context "Test-JwtStructure" {
+    It "should return true for a schematically valid JWT" {
+        $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
+        Test-JwtStructure -JsonWebToken $jwt -VerifySignaturePresent | Should -Be True
+    }
 
-            $exp = Convert-DateTimeToEpoch -DateTime (Get-Date).AddHours(1)
+    It "should return false for a schematically invalid JWT" {
+        $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTYbmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
+        Test-JwtStructure -JsonWebToken $jwt -VerifySignaturePresent | Should -Be False
+    }
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+    It "should return false for a JWT with a blank signature" {
+        $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTYbmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9."
+        Test-JwtStructure -JsonWebToken $jwt -VerifySignaturePresent | Should -Be False
+    }
 
-            $payload = @{sub = "tony"; exp = $exp } | ConvertTo-JwtPart
+    It "should return true for a JWT sans signature when VerifySignaturePresent is not used" {
+        $jwt = $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9"
+        Test-JwtStructure -JsonWebToken $jwt | Should -Be True
+    }
+}
 
-            $jwt = "{0}.{1}" -f $header, $payload
+Context 'Test-JwtDateRange' {
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+    It "should return true for a JWT with exp claim only" {
+        $key = "secret"
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $exp = Convert-DateTimeToEpoch -DateTime (Get-Date).AddHours(1)
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be True
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+
+        $payload = @{sub = "tony"; exp = $exp } | ConvertTo-JwtPart
+
+        $jwt = "{0}.{1}" -f $header, $payload
+
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+
+        $jws = "{0}.{1}" -f $jwt, $sig
+
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be True
+    }
+
+    It "should throw an exception when token has no exp claim" {
+        $key = "secret"
+
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+
+        $payload = @{sub = "tony" } | ConvertTo-JwtPart
+
+        $jwt = "{0}.{1}" -f $header, $payload
+
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+
+        $jws = "{0}.{1}" -f $jwt, $sig
+
+        [bool]$throwsException = $false
+        try {
+            Test-JwtDateRange -JsonWebToken $jws -ErrorAction Stop | Out-Null
+        }
+        catch {
+            $throwsException = $true
         }
 
-        It "should throw an exception when token has no exp claim" {
-            $key = "secret"
+        $throwsException | Should -Be True
+    }
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+    It "should return false with a JWT that has an nbf in the future" {
+        $key = "secret"
 
-            $payload = @{sub = "tony" } | ConvertTo-JwtPart
+        $now = Get-Date
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $nbf = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(5)
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $exp = Convert-DateTimeToEpoch -DateTime $now.AddHours(1)
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            [bool]$throwsException = $false
-            try {
-                Test-JwtDateRange -JsonWebToken $jws -ErrorAction Stop | Out-Null
-            }
-            catch {
-                $throwsException = $true
-            }
+        $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
-            $throwsException | Should -Be True
-        }
+        $jwt = "{0}.{1}" -f $header, $payload
 
-        It "should return false with a JWT that has an nbf in the future" {
-            $key = "secret"
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-            $now = Get-Date
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-            $nbf = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(5)
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be False
+    }
 
-            $exp = Convert-DateTimeToEpoch -DateTime $now.AddHours(1)
+    It "should return true with a JWT that has an nbf in the past and an exp one hour into the future" {
+        $key = "secret"
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+        $now = Get-Date
 
-            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
+        $nbf = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $exp = Convert-DateTimeToEpoch -DateTime $now.AddHours(1)
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be False
-        }
+        $jwt = "{0}.{1}" -f $header, $payload
 
-        It "should return true with a JWT that has an nbf in the past and an exp one hour into the future" {
-            $key = "secret"
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-            $now = Get-Date
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-            $nbf = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be True
+    }
 
-            $exp = Convert-DateTimeToEpoch -DateTime $now.AddHours(1)
+    It "should return false for an expired JWT with exp claim only" {
+        $key = "secret"
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+        $exp = Convert-DateTimeToEpoch -DateTime (Get-Date).AddMinutes(-1)
 
-            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $payload = @{sub = "tony"; exp = $exp } | ConvertTo-JwtPart
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $jwt = "{0}.{1}" -f $header, $payload
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be True
-        }
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-        It "should return false for an expired JWT with exp claim only" {
-            $key = "secret"
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be False
+    }
 
-            $exp = Convert-DateTimeToEpoch -DateTime (Get-Date).AddMinutes(-1)
+    It "should return false for an expired JWT with iat and exp claims" {
+        $key = "secret"
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+        $now = Get-Date
 
-            $payload = @{sub = "tony"; exp = $exp } | ConvertTo-JwtPart
+        $iat = Convert-DateTimeToEpoch -DateTime $now
+        $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $payload = @{sub = "tony"; iat = $iat; exp = $exp } | ConvertTo-JwtPart
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $jwt = "{0}.{1}" -f $header, $payload
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be False
-        }
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-        It "should return false for an expired JWT with iat and exp claims" {
-            $key = "secret"
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-            $now = Get-Date
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be False
+    }
 
-            $iat = Convert-DateTimeToEpoch -DateTime $now
-            $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
+    It "should return false for an expired JWT with nbf and exp claims" {
+        $key = "secret"
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+        $now = Get-Date
 
-            $payload = @{sub = "tony"; iat = $iat; exp = $exp } | ConvertTo-JwtPart
+        $nbf = Convert-DateTimeToEpoch -DateTime $now
+        $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $jwt = "{0}.{1}" -f $header, $payload
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be False
-        }
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-        It "should return false for an expired JWT with nbf and exp claims" {
-            $key = "secret"
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-            $now = Get-Date
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be False
+    }
 
-            $nbf = Convert-DateTimeToEpoch -DateTime $now
-            $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(-1)
+    It "should return true for a valid JWT with iat and exp claims" {
+        $key = "secret"
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+        $now = Get-Date
 
-            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
+        $iat = Convert-DateTimeToEpoch -DateTime $now
+        $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(2)
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $payload = @{sub = "tony"; iat = $iat; exp = $exp } | ConvertTo-JwtPart
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $jwt = "{0}.{1}" -f $header, $payload
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be False
-        }
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-        It "should return true for a valid JWT with iat and exp claims" {
-            $key = "secret"
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-            $now = Get-Date
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be True
+    }
 
-            $iat = Convert-DateTimeToEpoch -DateTime $now
-            $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(2)
+    It "should return true for an valid JWT with nbf and exp claims" {
+        $key = "secret"
 
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+        $now = Get-Date
 
-            $payload = @{sub = "tony"; iat = $iat; exp = $exp } | ConvertTo-JwtPart
+        $nbf = Convert-DateTimeToEpoch -DateTime $now
+        $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(2)
 
-            $jwt = "{0}.{1}" -f $header, $payload
+        $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
 
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+        $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
 
-            $jws = "{0}.{1}" -f $jwt, $sig
+        $jwt = "{0}.{1}" -f $header, $payload
 
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be True
-        }
+        $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
 
-        It "should return true for an valid JWT with nbf and exp claims" {
-            $key = "secret"
+        $jws = "{0}.{1}" -f $jwt, $sig
 
-            $now = Get-Date
-
-            $nbf = Convert-DateTimeToEpoch -DateTime $now
-            $exp = Convert-DateTimeToEpoch -DateTime $now.AddMinutes(2)
-
-            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
-
-            $payload = @{sub = "tony"; nbf = $nbf; exp = $exp } | ConvertTo-JwtPart
-
-            $jwt = "{0}.{1}" -f $header, $payload
-
-            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
-
-            $jws = "{0}.{1}" -f $jwt, $sig
-
-            Test-JwtDateRange -JsonWebToken $jws | Should -Be True
-        }
+        Test-JwtDateRange -JsonWebToken $jws | Should -Be True
     }
 }
