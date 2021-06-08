@@ -32,6 +32,7 @@ function Get-JwkCollection {
 
 #>
     [CmdletBinding()]
+    [Alias('gjwkc')]
     [OutputType([String[]], [PSCustomObject[]])]
     Param
     (
