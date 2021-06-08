@@ -1,6 +1,5 @@
-﻿function Get-JwkCollection
-{
-<#
+function Get-JwkCollection {
+    <#
     .SYNOPSIS
         Gets a collection of JSON Web Keys (JWKs) from a URI.
     .DESCRIPTION
@@ -36,16 +35,16 @@
     [OutputType([String[]], [PSCustomObject[]])]
     Param
     (
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)][System.Uri]$Uri,
+        [Parameter(Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0)][System.Uri]$Uri,
 
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$false,
-                   Position=1)][Switch]$AsJson
+        [Parameter(Mandatory = $false,
+            ValueFromPipelineByPropertyName = $false,
+            Position = 1)][Switch]$AsJson
     )
-    PROCESS
-    {
+    PROCESS {
         $jwks = @()
 
         $response = $null
@@ -74,8 +73,7 @@
             }
         }
 
-        foreach ($key in $response.keys)
-        {
+        foreach ($key in $response.keys) {
             if (($null -eq $key.kty) -or ($null -eq $key.n) -or ($null -eq $key.e)) {
                 $ArgumentException = 'JSON Web Key schema validation failed. Ensure that a valid JWK is passed that contains the key type expressed as "kty", a public exponent as "e”, and modulus as "n" parameters per RFC 7517.'
                 Write-Error -Exception $ArgumentException -ErrorAction Stop
