@@ -20,7 +20,7 @@ Requires PowerShell 5.1 or above.
 
 ## Examples
 
-### Token creation and validation
+### Token decoding, creation, and validation
 
 ```powershell
 # Decode (not validate) a JWT
