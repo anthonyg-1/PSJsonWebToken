@@ -92,7 +92,7 @@ New-JsonWebKeySet -Certificate $cert -KeyOperations Verification -Compress
 openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout pvk.pem -out pub.pem
 openssl pkcs12 -inkey pvk.pem -in pub.pem -export -out cert.pfx
 $cert = Get-PfxCertificate -FilePath ./cert.pfx
-$cert | njwks > jwk.json
+$cert | njwks -c > jwk.json
 ```
 
 ### JWT attacks
