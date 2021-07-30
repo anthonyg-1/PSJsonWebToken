@@ -37,16 +37,16 @@ function New-JsonWebKeySet {
     [Alias('njwks', 'CreateJwkSet')]
     [OutputType([System.String])]
     Param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][Alias('Cert')]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 
         [Parameter(Mandatory = $false, Position = 1)]
         [ValidateSet("Verification", "Encryption")]
         [System.String]$KeyOperations = "Verification",
 
-        [Parameter(Mandatory = $false, Position = 2)][Switch]$IncludeChain,
+        [Parameter(Mandatory = $false, Position = 2)][Alias('ic')][Switch]$IncludeChain,
 
-        [Parameter(Mandatory = $false, Position = 3)][Switch]$Compress
+        [Parameter(Mandatory = $false, Position = 3)][Alias('c')][Switch]$Compress
     )
 
     PROCESS {
