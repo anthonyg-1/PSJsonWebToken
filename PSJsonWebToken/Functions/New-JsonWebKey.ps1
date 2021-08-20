@@ -8,8 +8,10 @@ function New-JsonWebKey {
         The certificate that will be converted into a JSON Web Key.
     .PARAMETER KeyOperations
         The public key operation that this JWK will be used for. Verification is the default.
-    .PARAMETER IncludeChain
-        Tells the function to include the full certificate chain which includes not only the end-entity certificate, but also the issuing and root certificate in the x5c property (X.509 Certificate Chain). Not selecting this parameter will result in x5c property containing the end-entity certificate only.
+    .PARAMETER IncludeCertificate
+        Tells the function to include the base 64 encoded x509 certificate expressed as the x5c property. This parameter returns the end-entity certificate only.
+    .PARAMETER IncludeCertificateChain
+        Tells the function to include the full certificate chain which includes not only the end-entity certificate, but also the issuing and root certificate in the x5c property (X.509 Certificate Chain).
     .PARAMETER AsJson
          Tells the function to return JSON as opposed to an object.
     .PARAMETER Compress
@@ -59,10 +61,11 @@ function New-JsonWebKey {
         [ValidateSet("Verification", "Encryption")]
         [System.String]$KeyOperations = "Verification",
 
-        [Parameter(Mandatory = $false, Position = 2)][Switch]$IncludeChain,
+        [Parameter(Mandatory = $false, Position = 2)][Alias('IncludeCert', 'ic')][Switch]$IncludeCertificate,
+        [Parameter(Mandatory = $false, Position = 3)][Alias('IncludeChain', 'icc')][Switch]$IncludeCertificateChain,
 
-        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "JSON")][Switch]$AsJson,
-        [Parameter(Mandatory = $false, Position = 4, ParameterSetName = "JSON")][Switch]$Compress
+        [Parameter(Mandatory = $false, Position = 4, ParameterSetName = "JSON")][Switch]$AsJson,
+        [Parameter(Mandatory = $false, Position = 5, ParameterSetName = "JSON")][Switch]$Compress
     )
 
     PROCESS {
@@ -77,21 +80,28 @@ function New-JsonWebKey {
             default { $publicKeyUse = "sig" }
         }
 
-        $X509CertificateChain = [List[String]]::new()
-        if ($PSBoundParameters.ContainsKey("IncludeChain")) {
-            [X509Chain]$certChain = [X509Chain]::new()
-            $certChain.Build($Certificate) | Out-Null
+        [bool]$certShouldBeReturned = ($PSBoundParameters.ContainsKey("IncludeCertificateChain")) -or ($PSBoundParameters.ContainsKey("IncludeCertificate"))
 
-            foreach ($chainElement in $certChain.ChainElements) {
-                $rawData = $chainElement.Certificate.RawData
+        $X509CertificateChain = [List[String]]::new()
+        if ($certShouldBeReturned) {
+            if ($PSBoundParameters.ContainsKey("IncludeCertificateChain")) {
+                [X509Chain]$certChain = [X509Chain]::new()
+                $certChain.Build($Certificate) | Out-Null
+
+                foreach ($chainElement in $certChain.ChainElements) {
+                    $rawData = $chainElement.Certificate.RawData
+                    $base64 = [Convert]::ToBase64String($rawData)
+                    $X509CertificateChain.Add($base64)
+                }
+            }
+            else {
+                $rawData = $Certificate.RawData
                 $base64 = [Convert]::ToBase64String($rawData)
                 $X509CertificateChain.Add($base64)
             }
         }
         else {
-            $rawData = $Certificate.RawData
-            $base64 = [Convert]::ToBase64String($rawData)
-            $X509CertificateChain.Add($base64)
+            $X509CertificateChain = $null
         }
 
         $key = $Certificate.PublicKey.Key
@@ -110,13 +120,24 @@ function New-JsonWebKey {
             Write-Error -Exception $CryptographicException -Category SecurityError -ErrorAction Stop
         }
 
-        $jwkObject = [PSCustomObject][ordered]@{kty = "RSA"
-            use                                     = $publicKeyUse
-            e                                       = $encodedExponent
-            n                                       = $encodedModulus
-            kid                                     = $encodedThumbprint
-            x5t                                     = $encodedThumbprint
-            x5c                                     = $X509CertificateChain
+        $jwkObject = $null
+        if ($certShouldBeReturned) {
+            $jwkObject = [PSCustomObject][ordered]@{kty = "RSA"
+                use                                     = $publicKeyUse
+                e                                       = $encodedExponent
+                n                                       = $encodedModulus
+                kid                                     = $encodedThumbprint
+                x5t                                     = $encodedThumbprint
+                x5c                                     = $X509CertificateChain
+            }
+        }
+        else {
+            $jwkObject = [PSCustomObject][ordered]@{kty = "RSA"
+                use                                     = $publicKeyUse
+                e                                       = $encodedExponent
+                n                                       = $encodedModulus
+                kid                                     = $encodedThumbprint
+            }
         }
 
         if ($PSCmdlet.ParameterSetName -eq "JSON") {
