@@ -8,8 +8,10 @@ function New-JsonWebKeySet {
         The certificate that will be converted into a JSON Web Key.
     .PARAMETER KeyOperations
         The public key operation that this JWK will be used for. Verification is the default.
-    .PARAMETER IncludeChain
-        Tells the function to include the full certificate chain which includes not only the end-entity certificate, but also the issuing and root certificate in the x5c property (X.509 Certificate Chain). Not selecting this parameter will result in x5c property containing the end-entity certificate only.
+    .PARAMETER IncludeCertificate
+        Tells the function to include the base 64 encoded x509 certificate expressed as the x5c property. This parameter returns the end-entity certificate only.
+    .PARAMETER IncludeCertificateChain
+        Tells the function to include the full certificate chain which includes not only the end-entity certificate, but also the issuing and root certificate in the x5c property (X.509 Certificate Chain).
     .PARAMETER Compress
         Omits white space and indented formatting in the output JSON Web Key set.
     .EXAMPLE
@@ -44,16 +46,25 @@ function New-JsonWebKeySet {
         [ValidateSet("Verification", "Encryption")]
         [System.String]$KeyOperations = "Verification",
 
-        [Parameter(Mandatory = $false, Position = 2)][Alias('ic')][Switch]$IncludeChain,
+        [Parameter(Mandatory = $false, Position = 2)][Alias('IncludeCert', 'ic')][Switch]$IncludeCertificate,
+        [Parameter(Mandatory = $false, Position = 3)][Alias('IncludeChain', 'icc')][Switch]$IncludeCertificateChain,
 
-        [Parameter(Mandatory = $false, Position = 3)][Alias('c')][Switch]$Compress
+        [Parameter(Mandatory = $false, Position = 4)][Alias('c')][Switch]$Compress
     )
 
     PROCESS {
         [string]$jwkSet = ""
 
-        if ($PSBoundParameters.ContainsKey("IncludeChain")) {
-            $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations -IncludeChain
+        [bool]$certShouldBeReturned = ($PSBoundParameters.ContainsKey("IncludeCertificateChain")) -or ($PSBoundParameters.ContainsKey("IncludeCertificate"))
+
+        $jwkObject = $null
+        if ($certShouldBeReturned) {
+            if ($PSBoundParameters.ContainsKey("IncludeCertificateChain")) {
+                $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations -IncludeCertificateChain
+            }
+            else {
+                $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations -IncludeCertificate
+            }
         }
         else {
             $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations
