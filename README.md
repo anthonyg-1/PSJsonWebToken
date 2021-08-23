@@ -139,7 +139,7 @@ $jwk = New-JsonWebKey -Certificate $jwtSigningCert -AsJson
 Test-JsonWebToken -JsonWebToken $jwt -JsonWebKey $jwk -Verbose
 
 # (Optional) serialize x509 cert as JWK set and output to a file for further validation:
-$jwtSigningCert | New-JsonWebKeySet -Compress | Out-File -FilePath C:\ps\jwt\jwks.json -Encoding ascii
+$jwtSigningCert | New-JsonWebKeySet -Compress | Out-File -FilePath .\jwks.json -Encoding ascii
 
 # Cleanup (remove cert):
 Remove-Item -Path $jwtSigningCert.PSPath
