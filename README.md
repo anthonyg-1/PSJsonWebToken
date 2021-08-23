@@ -97,8 +97,6 @@ $cert | njwks -c > jwk.json
 
 ### Create a JWT using a self-signed cert and verify signature against JWK
 ```powershell
-#requires -Module PSJsonWebToken
-
 # Generate self-signed signing certificate requireed for New-JsonWebToken:
 function New-JwtSigningCert([string]$Upn = "jwt.test@mydomain.local",
     [string]$Subject = "CN=jwt.test.mydomain.local",
@@ -141,7 +139,7 @@ $jwk = New-JsonWebKey -Certificate $jwtSigningCert -AsJson
 Test-JsonWebToken -JsonWebToken $jwt -JsonWebKey $jwk -Verbose
 
 # (Optional) serialize x509 cert as JWK set and output to a file for further validation:
-$jwtSigningCert | New-JsonWebKeySet -Compress | Out-File -Path .\jwks.json -Encoding ascii
+$jwtSigningCert | New-JsonWebKeySet -Compress | Out-File -FilePath C:\ps\jwt\jwks.json -Encoding ascii
 
 # Cleanup (remove cert):
 Remove-Item -Path $jwtSigningCert.PSPath
