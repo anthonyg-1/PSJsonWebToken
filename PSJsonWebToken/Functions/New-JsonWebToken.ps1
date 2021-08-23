@@ -1,6 +1,5 @@
-function New-JsonWebToken
-{
-<#
+function New-JsonWebToken {
+    <#
     .SYNOPSIS
         Generates a JSON Web Token.
     .DESCRIPTION
@@ -58,92 +57,82 @@ function New-JsonWebToken
         ConvertTo-SecureString
 #>
     [CmdletBinding()]
-	[Alias('njwt', 'NewJwt', 'CreateJwt')]
+    [Alias('njwt', 'NewJwt', 'CreateJwt')]
     [OutputType([System.String])]
     Param (
-        [Parameter(Mandatory=$true,Position=0)]
+        [Parameter(Mandatory = $true, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [System.Collections.Hashtable]$Claims,
 
-        [Parameter(Mandatory=$true,Position=1)]
-        [ValidateSet("SHA256","SHA384","SHA512")]
-        [String]$HashAlgorithm,
+        [Parameter(Mandatory = $false, Position = 1)]
+        [ValidateSet("SHA256", "SHA384", "SHA512")]
+        [String]$HashAlgorithm = "SHA256",
 
-        [Parameter(Mandatory=$false,Position=2)]
-        [ValidateRange(1,300)]
+        [Parameter(Mandatory = $false, Position = 2)]
+        [ValidateRange(1, 300)]
         [System.Int32]$NotBeforeSkew,
 
-        [Parameter(Mandatory=$false,Position=3)]
+        [Parameter(Mandatory = $false, Position = 3)]
         [Switch]$AddJtiClaim,
 
-        [Parameter(Mandatory=$true,ParameterSetName="RSA",Position=4)][Alias("Certificate", "Cert")]
+        [Parameter(Mandatory = $true, ParameterSetName = "RSA", Position = 4)][Alias("Certificate", "Cert")]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$SigningCertificate,
 
-        [Parameter(Mandatory=$false,Position=5)]
-        [ValidateRange(1,2147483647)]
-        [System.Int32]$TimeToLive=300,
+        [Parameter(Mandatory = $false, Position = 5)]
+        [ValidateRange(1, 2147483647)]
+        [System.Int32]$TimeToLive = 300,
 
-        [Parameter(Mandatory=$false,ParameterSetName="RSA",Position=6)]
+        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 6)]
         [System.Uri]$JwkUri,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=7)]
-        [ValidateLength(4,32768)]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 7)]
+        [ValidateLength(4, 32768)]
         [String]$Key,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMACSecure",Position=7)]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 7)]
         [ValidateNotNullOrEmpty()]
         [System.Security.SecureString]$SecureKey,
 
-        [Parameter(Mandatory=$false,Position=8)][Switch]$ExcludeDefaultClaims
+        [Parameter(Mandatory = $false, Position = 8)][Switch]$ExcludeDefaultClaims
 
-        )
+    )
 
-        PROCESS
-        {
-            [string]$jwt = ""
+    PROCESS {
+        [string]$jwt = ""
 
-            # Construct payload for HMAC or RSA:
-            [string]$payload = ""
+        # Construct payload for HMAC or RSA:
+        [string]$payload = ""
 
-            [HashTable]$_claims = $Claims
+        [HashTable]$_claims = $Claims
 
-            if ($PSBoundParameters.ContainsKey("ExcludeDefaultClaims"))
-            {
-                $payload = $_claims | ConvertTo-JwtPart
-            }
-            else
-            {
-                if ($PSBoundParameters.ContainsKey("AddJtiClaim"))
-                {
-                    if (-not($_claims.ContainsKey("jti")))
-                    {
-                        $_claims.Add("jti", (New-JwtId))
-                    }
-                }
-
-                if ($PSBoundParameters.ContainsKey("NotBeforeSkew"))
-                {
-                    $payload = New-JwtPayloadString -Claims $_claims -NotBeforeSkew $NotBeforeSkew
-                }
-                else
-                {
-                    $payload = New-JwtPayloadString -Claims $_claims
+        if ($PSBoundParameters.ContainsKey("ExcludeDefaultClaims")) {
+            $payload = $_claims | ConvertTo-JwtPart
+        }
+        else {
+            if ($PSBoundParameters.ContainsKey("AddJtiClaim")) {
+                if (-not($_claims.ContainsKey("jti"))) {
+                    $_claims.Add("jti", (New-JwtId))
                 }
             }
 
-        if ($PSCmdlet.ParameterSetName -eq "RSA")
-        {
-            if ($null -eq $SigningCertificate.PrivateKey.KeyExchangeAlgorithm)
-            {
-	            $cryptographicExceptionMessage = "Private key either not found or inaccessible for certificate with thumbprint: {0} " -f $SigningCertificate.Thumbprint
-	            $CryptographicException = New-Object -TypeName System.Security.Cryptography.CryptographicException -ArgumentList $cryptographicExceptionMessage
-	            Write-Error -Exception $CryptographicException -Category SecurityError -ErrorAction Stop
+            if ($PSBoundParameters.ContainsKey("NotBeforeSkew")) {
+                $payload = New-JwtPayloadString -Claims $_claims -NotBeforeSkew $NotBeforeSkew
+            }
+            else {
+                $payload = New-JwtPayloadString -Claims $_claims
+            }
+        }
+
+        if ($PSCmdlet.ParameterSetName -eq "RSA") {
+            if ($null -eq $SigningCertificate.PrivateKey.KeyExchangeAlgorithm) {
+                $cryptographicExceptionMessage = "Private key either not found or inaccessible for certificate with thumbprint: {0} " -f $SigningCertificate.Thumbprint
+                $CryptographicException = New-Object -TypeName System.Security.Cryptography.CryptographicException -ArgumentList $cryptographicExceptionMessage
+                Write-Error -Exception $CryptographicException -Category SecurityError -ErrorAction Stop
             }
 
             #1. Construct header:
             [string]$rsaAlg = ""
-            switch ($HashAlgorithm)
-            {
+            switch ($HashAlgorithm) {
                 "SHA256" { $rsaAlg = "RS256" }
                 "SHA384" { $rsaAlg = "RS384" }
                 "SHA512" { $rsaAlg = "RS512" }
@@ -152,10 +141,9 @@ function New-JsonWebToken
 
             $encodedThumbprint = ConvertTo-Base64UrlEncodedString -Bytes $SigningCertificate.GetCertHash()
 
-            $headerTable = [ordered]@{typ="JWT";alg=$rsaAlg;x5t=$encodedThumbprint;kid=$encodedThumbprint}
+            $headerTable = [ordered]@{typ = "JWT"; alg = $rsaAlg; x5t = $encodedThumbprint; kid = $encodedThumbprint }
 
-            if ($PSBoundParameters.ContainsKey("JwkUri"))
-            {
+            if ($PSBoundParameters.ContainsKey("JwkUri")) {
                 $headerTable.Add("jku", $JwkUri)
             }
             $header = $headerTable | ConvertTo-JwtPart
@@ -171,22 +159,18 @@ function New-JsonWebToken
             #5. Construct jws:
             $jwt = "{0}.{1}" -f $jwtSansSig, $rsaSig
         }
-        else # Parameter set is HMAC of HMACSecure
-        {
+        else { # Parameter set is HMAC of HMACSecure
             [string]$hmacKey = ""
-            if ($PSCmdlet.ParameterSetName -eq "HMACSecure")
-            {
+            if ($PSCmdlet.ParameterSetName -eq "HMACSecure") {
                 $networkCredential = [System.Net.NetworkCredential]::new("", $SecureKey)
                 $hmacKey = $networkCredential.Password
             }
-            else
-            {
+            else {
                 $hmacKey = $Key
             }
 
             $hmacAlg = ""
-            switch ($HashAlgorithm)
-            {
+            switch ($HashAlgorithm) {
                 "SHA256" { $hmacAlg = "HS256" }
                 "SHA384" { $hmacAlg = "HS384" }
                 "SHA512" { $hmacAlg = "HS512" }
@@ -194,7 +178,7 @@ function New-JsonWebToken
             }
 
             #1. Construct header:
-            $header = [ordered]@{typ="JWT";alg=$hmacAlg} | ConvertTo-JwtPart
+            $header = [ordered]@{typ = "JWT"; alg = $hmacAlg } | ConvertTo-JwtPart
 
             #2. Payload is constructed at beginning of PROCESS block.
 
