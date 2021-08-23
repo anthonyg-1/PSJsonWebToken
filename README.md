@@ -95,6 +95,61 @@ $cert = Get-PfxCertificate -FilePath ./cert.pfx
 $cert | njwks -c > jwk.json
 ```
 
+### Create a JWT using a self-signed cert and verify signature against JWK
+```powershell
+using namespace System
+using namespace System.Security.Cryptography.X509Certificates
+
+#requires -Module PSJsonWebToken
+
+# Generate self-signed signing certificate requireed for New-JsonWebToken:
+function New-JwtSigningCert([string]$Upn = "jwt.test@mydomain.local",
+    [string]$Subject = "CN=jwt.test.mydomain.local",
+    [string]$KeyUsage = "DigitalSignature",
+    [string]$StoreLocation = "Cert:\CurrentUser\My") {
+
+    [X509Certificate2]$cert = $null
+
+    $parameters = @{
+        Type              = "Custom";
+        Subject           = $Subject;
+        TextExtension     = @("2.5.29.37={text}1.3.6.1.5.5.7.3.2", "2.5.29.17={text}upn=$Upn");
+        KeyUsage          = $KeyUsage;
+        KeyAlgorithm      = "RSA";
+        KeyLength         = 2048;
+        CertStoreLocation = $StoreLocation;
+        Provider          = 'Microsoft Enhanced RSA and AES Cryptographic Provider';
+        KeySpec           = "KeyExchange"
+        KeyExportPolicy   = "Exportable"
+    }
+
+    $generatedCert = New-SelfSignedCertificate @parameters
+
+    # If PowerShell 7.*, have to get the newly created cert from the store location as opposed to just returning it:
+    $certPath = Join-Path -Path $StoreLocation -ChildPath $generatedCert.Thumbprint
+    $cert = Get-Item -Path $certPath
+
+    return $cert
+}
+
+# Generate JWT:
+$jwtSigningCert = New-JwtSigningCert
+$claims = @{sub = "test.user@mydomain.local"; roles = ("tester", "admin") }
+$jwt = New-JsonWebToken -Claims $claims -SigningCertificate $jwtSigningCert -TimeToLive 300
+
+# Generate JWK (not JWK set, just JWK):
+$jwk = New-JsonWebKey -Certificate $jwtSigningCert -AsJson
+
+# Validate JWT against the JWK:
+Test-JsonWebToken -JsonWebToken $jwt -JsonWebKey $jwk -Verbose
+
+# (Optional) serialize x509 cert as JWK set and output to a file for further validation:
+$jwtSigningCert | New-JsonWebKeySet -Compress | Out-File .\jwks.json
+
+# Cleanup (remove cert):
+Remove-Item -Path $jwtSigningCert.PSPath
+```
+
 ### JWT attacks
 ```powershell
 # None alg attack
