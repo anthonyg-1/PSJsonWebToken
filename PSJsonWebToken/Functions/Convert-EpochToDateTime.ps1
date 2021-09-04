@@ -29,7 +29,7 @@
     Param
     (
         [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
+                   ValueFromPipeline=$true,
                    Position=0)][Int]$Epoch
     )
     PROCESS
