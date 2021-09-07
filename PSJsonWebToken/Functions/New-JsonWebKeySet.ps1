@@ -70,7 +70,7 @@ function New-JsonWebKeySet {
             $jwkObject = New-JsonWebKey -Certificate $Certificate -KeyOperations $KeyOperations
         }
 
-        $jwkSetObject = @{keys = $jwkObject }
+        $jwkSetObject = @{keys = @($jwkObject) }
 
         if ($PSBoundParameters.ContainsKey("Compress")) {
             $jwkSet = $jwkSetObject | ConvertTo-Json -Compress
