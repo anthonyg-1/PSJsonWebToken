@@ -9,14 +9,14 @@ This PowerShell module contains functions to create, validate, and test JSON Web
 :penguin: `Linux`
 :apple: `MacOS`
 
+### Requirements
+Requires PowerShell 5.1 or above.
+
 ### Installation
 
 ```powershell
-# Installing the module
 Install-Module -Name PSJsonWebToken -Repository PSGallery -Scope CurrentUser
 ```
-### Requirements
-Requires PowerShell 5.1 or above.
 
 ## Examples
 
