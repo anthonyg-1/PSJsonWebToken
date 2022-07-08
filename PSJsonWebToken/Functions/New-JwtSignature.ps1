@@ -53,8 +53,8 @@
         [Parameter(Mandatory=$true,ParameterSetName="RSA",Position=2)][Alias("Certificate", "Cert")]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$SigningCertificate,
 
-        [Parameter(Mandatory=$true,ParameterSetName="HMAC",Position=3)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 3)]
+        [ValidateLength(1, 32768)]
         [String]$Key,
 
         [Parameter(Mandatory=$false,ValueFromPipeline=$false,Position=4)][Switch]$SkipJwtStructureTest

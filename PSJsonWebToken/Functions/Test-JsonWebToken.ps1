@@ -82,7 +82,7 @@ function Test-JsonWebToken {
         [ValidateNotNullOrEmpty()][System.Security.Cryptography.X509Certificates.X509Certificate2]$VerificationCertificate,
 
         [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 3)]
-        [ValidateLength(4, 32768)]
+        [ValidateLength(1, 32768)]
         [String]$Key,
 
         [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 3)]

@@ -86,7 +86,7 @@ function New-JsonWebToken {
         [System.Uri]$JwkUri,
 
         [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 7)]
-        [ValidateLength(4, 32768)]
+        [ValidateLength(1, 32768)]
         [String]$Key,
 
         [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 7)]
