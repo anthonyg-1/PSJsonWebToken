@@ -1,6 +1,5 @@
-function ConvertFrom-EncodedJsonWebToken
-{
-<#
+function ConvertFrom-EncodedJsonWebToken {
+    <#
     .SYNOPSIS
         Decodes a JSON Web Token.
     .DESCRIPTION
@@ -39,22 +38,19 @@ function ConvertFrom-EncodedJsonWebToken
         ConvertFrom-Json
 #>
     [CmdletBinding()]
-	[Alias('DecodeJwt')]
+    [Alias('jwtd', 'DecodeJwt')]
     [OutputType([PSJsonWebToken.DecodedJsonWebToken])]
     Param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true,Position=0)]
-        [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken
     )
-	BEGIN
-	{
+    BEGIN {
         $decodeExceptionMessage = "Unable to decode JWT."
         $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
-	}
-    PROCESS
-    {
+    }
+    PROCESS {
         [bool]$isValidJwt = Test-JwtStructure -JsonWebToken $JsonWebToken
-        if (-not($isValidJwt))
-        {
+        if (-not($isValidJwt)) {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
 
@@ -88,50 +84,41 @@ function ConvertFrom-EncodedJsonWebToken
         [string]$encodedThumbprint = ""
         [string]$decodedThumbprint = ""
 
-        if ($deserializedHeader.ContainsKey("x5t"))
-        {
+        if ($deserializedHeader.ContainsKey("x5t")) {
             $containsPotentialThumbprint = $true
             $encodedThumbprint = $deserializedHeader.x5t
         }
-        elseif ($deserializedHeader.ContainsKey("kid"))
-        {
+        elseif ($deserializedHeader.ContainsKey("kid")) {
             $containsPotentialThumbprint = $true
             $encodedThumbprint = $deserializedHeader.kid
         }
 
-        if ($containsPotentialThumbprint)
-        {
+        if ($containsPotentialThumbprint) {
             [bool]$thumbprintDecodes = $false
-            try
-            {
+            try {
                 $decodedThumbprint = ConvertFrom-EncodedJwtThumbprint -EncodedThumbprint $encodedThumbprint
                 $thumbprintDecodes = $true
             }
-            catch
-            {
+            catch {
                 $thumbprintDecodes = $false
             }
 
-            if ($thumbprintDecodes)
-            {
+            if ($thumbprintDecodes) {
                 $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name SigningCertificateThumbprint -Value $decodedThumbprint
             }
         }
 
-        if ($deserializedPayload.ContainsKey("nbf"))
-        {
+        if ($deserializedPayload.ContainsKey("nbf")) {
             $notBefore = Convert-EpochToDateTime -Epoch $deserializedPayload.nbf
             $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name NotBefore -Value $notBefore
         }
 
-        if ($deserializedPayload.ContainsKey("iat"))
-        {
+        if ($deserializedPayload.ContainsKey("iat")) {
             $issuedAt = Convert-EpochToDateTime -Epoch $deserializedPayload.iat
             $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name IssuedAt -Value $issuedAt
         }
 
-        if ($deserializedPayload.ContainsKey("exp"))
-        {
+        if ($deserializedPayload.ContainsKey("exp")) {
             $expiration = Convert-EpochToDateTime -Epoch $deserializedPayload.exp
             $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name Expiration -Value $expiration
         }
