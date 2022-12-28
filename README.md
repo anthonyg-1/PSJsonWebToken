@@ -69,7 +69,7 @@ $jwk = '
 '
 Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -JsonWebKey $jwk -SkipExpirationCheck
 
-# Validate an HMAC-SHA256 signed JWT signature as well as audience and issuer claims (skip expiration check)
+# Validate an HMAC-SHA256 signed JWT signature as well as audience and issuer claims (no expiration check) displaying verbose output
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzIyNjk0MDcsIm5iZiI6MTY3MjI2OTQwNywiZXhwIjoxNjcyMjY5NzA3LCJpc3MiOiJteWlkcCIsInN1YiI6InRvbnkiLCJhdWQiOiJteWFwcCJ9.6pgmpyVCo9mzCgL07lhAHg5EUbAqYqS6YcxunrlfEYQ"
 Test-JsonWebToken -JsonWebToken $jwt -Key "secret" -Audience "myapp" -Issuer "myidp" -SkipExpirationCheck -Verbose
 
