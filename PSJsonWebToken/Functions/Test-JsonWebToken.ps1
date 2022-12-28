@@ -97,7 +97,7 @@ function Test-JsonWebToken {
 
         [Parameter(Mandatory = $true, ParameterSetName = "URI", Position = 3)][Alias('OidcUri', 'JwkUri')][System.Uri]$Uri,
 
-        [Parameter(Mandatory = $false, Position = 4)][Alias("aud")][String[]]$Audience,
+        [Parameter(Mandatory = $false, Position = 4)][ValidateLength(2, 8192)][Alias("aud")][String]$Audience,
 
         [Parameter(Mandatory = $false, Position = 5)]
         [ValidateLength(2, 8192)][Alias("iss")][String]$Issuer,
@@ -236,7 +236,7 @@ function Test-JsonWebToken {
 
         if ($PSBoundParameters.ContainsKey("Audience")) {
             if ($payload.ContainsKey("aud")) {
-                if ($payload["aud"] -in $Audience) {
+                if ($Audience -cin $payload["aud"]) {
                     $audienceIsValid = $true
                 }
 
