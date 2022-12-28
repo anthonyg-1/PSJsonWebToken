@@ -2,7 +2,7 @@ using namespace System
 using namespace System.Security.Cryptography
 using namespace System.Security.Cryptography.X509Certificates
 
-#requires -Module Pester
+#requires -Modules @{ ModuleName="Pester"; ModuleVersion="4.10.1" }
 #requires -Module PSScriptAnalyzer
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -129,6 +129,10 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
     $hmacJwt = New-JsonWebToken -Claims $claims -HashAlgorithm SHA256 -Key $secretHmacKey -TimeToLive 300
 
+    $hmacJwtWithAudience = New-JsonWebToken -Claims @{sub = "someone@somecompany.com"; aud = 'myfancyapp' } -HashAlgorithm SHA256 -Key $secretHmacKey -TimeToLive 300
+
+    $hmacJwtWithIssuer = New-JsonWebToken -Claims @{sub = "someone@somecompany.com"; iss = 'myidp' } -HashAlgorithm SHA256 -Key $secretHmacKey -TimeToLive 300
+
     Context 'New-JsonWebToken' {
         It "should contain a header with an alg claim of HS256" {
             $headerTable = $hmacJwt | Get-JsonWebTokenHeader
@@ -141,6 +145,39 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
         It ("should validate against an HMAC key of '{0}'" -f $secretHmacKey) {
             Test-JsonWebToken -JsonWebToken $hmacJwt -HashAlgorithm SHA256 -Key $secretHmacKey | Should -Be True
         }
+
+        It ("should validate with the correct signing key and correct audience" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwtWithAudience -Audience "myfancyapp" -Key $secretHmacKey | Should -Be True
+        }
+
+        It ("should not validate with the correct signing key and incorrect audience" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwtWithAudience -Audience "myincorrectapp" -Key $secretHmacKey | Should -Be False
+        }
+
+        It ("should not validate with the correct signing key and missing audience" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwt -Audience "myincorrectapp" -Key $secretHmacKey | Should -Be False
+        }
+
+        It ("should not validate with the incorrect signing key and correct audience" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwtWithAudience -Audience "myfancyapp" -Key $badHmacKey | Should -Be False
+        }
+
+        It ("should validate with the correct signing key and correct issuer" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwtWithIssuer -Issuer "myidp" -Key $secretHmacKey | Should -Be True
+        }
+
+        It ("should not validate with the correct signing key and incorrect issuer" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwtWithIssuer -Issuer "myincorrectissuer" -Key $secretHmacKey | Should -Be False
+        }
+
+        It ("should not validate with the correct signing key and missing issuer" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwt -Issuer "myincorrectissuer" -Key $secretHmacKey | Should -Be False
+        }
+
+        It ("should not validate with the incorrect signing key and correct issuer" -f $badHmacKey) {
+            Test-JsonWebToken -JsonWebToken $hmacJwtWithIssuer -Issuer "myidp" -Key $badHmacKey | Should -Be False
+        }
+
 
         It ("should not validate against an HMAC key of '{0}'" -f $badHmacKey) {
             Test-JsonWebToken -JsonWebToken $hmacJwt -HashAlgorithm SHA256 -Key $badHmacKey | Should -Be False
@@ -256,8 +293,6 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
 
             $itSerializes | Should -Be True
         }
-
-
     }
 
     Context "ConvertTo-JwtPart" {
