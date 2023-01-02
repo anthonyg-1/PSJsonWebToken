@@ -64,6 +64,21 @@ function Test-JsonWebToken {
         Test-JsonWebToken -JsonWebToken $jwt -Uri $jwkUri -HashAlgorithm SHA256 -SkipExpirationCheck -Verbose
 
         Attempts to validate a JSON Web Token signature against a collection of JSON Web Keys in https://app.mycompany.com/common/discovery/keys and provides verbose output detailing what JWK was used to verify the signature.
+    .EXAMPLE
+        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzIyNjk0MDcsIm5iZiI6MTY3MjI2OTQwNywiZXhwIjoxNjcyMjY5NzA3LCJpc3MiOiJteWlkcCIsInN1YiI6InRvbnkiLCJhdWQiOiJteWFwcCJ9.6pgmpyVCo9mzCgL07lhAHg5EUbAqYqS6YcxunrlfEYQ"
+        Test-JsonWebToken -JsonWebToken $jwt -Key "secret" -Audience "myapp" -Issuer "myidp" -SkipExpirationCheck -Verbose
+
+        Validates an HMAC-SHA256 signed JWT signature as well as audience and issuer claims (no expiration check) displaying verbose output.
+    .EXAMPLE
+        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzIyNjk0MDcsIm5iZiI6MTY3MjI2OTQwNywiZXhwIjoxNjcyMjY5NzA3LCJpc3MiOiJteWlkcCIsInN1YiI6InRvbnkiLCJhdWQiOiJteWFwcCJ9.6pgmpyVCo9mzCgL07lhAHg5EUbAqYqS6YcxunrlfEYQ"
+        Test-JsonWebToken -JsonWebToken $jwt -Key "secret" -Audience "myapp" -Verbose
+
+        Attempts to validate an HMAC-SHA256 signed JWT including the signature, audience, and expiration.
+    .EXAMPLE
+        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzIyNjk0MDcsIm5iZiI6MTY3MjI2OTQwNywiZXhwIjoxNjcyMjY5NzA3LCJpc3MiOiJteWlkcCIsInN1YiI6InRvbnkiLCJhdWQiOiJteWFwcCJ9.6pgmpyVCo9mzCgL07lhAHg5EUbAqYqS6YcxunrlfEYQ"
+        Test-JsonWebToken -JsonWebToken $jwt -Key "secret" -Issuer "myidp" -SkipExpirationCheck -Verbose
+
+        Attempts to validate an HMAC-SHA256 signed JWT including the signature and issuer excluding expiration.
     .OUTPUTS
        System.Boolean
     .LINK
