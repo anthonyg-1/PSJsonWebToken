@@ -4,7 +4,7 @@ function Test-JwtSecret {
     .SYNOPSIS
         Attempts to obtain the secret for an HS256, HS384 or HS512-signed JSON Web Token.
     .DESCRIPTION
-         Attempts to obtain the secret for an HS256, HS384 or HS512-signed JSON Web Token from a wordlist containing potential secrets.
+        Attempts to obtain the secret for an HS256, HS384 or HS512-signed JSON Web Token from a wordlist containing potential secrets.
     .PARAMETER JsonWebToken
         The target JSON Web Token to test the list of secrets against.
     .PARAMETER HashAlgorithm
