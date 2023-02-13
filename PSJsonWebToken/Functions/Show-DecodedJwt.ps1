@@ -13,7 +13,7 @@ function Show-DecodedJwt {
         Displays a decoded JSON Web Token with the header in red, the body in cyan/blue, and a green placeholder for the signature.
     .INPUTS
         System.String
-        A string is recevied by the JsonWebToken parameter.
+        A string is received by the JsonWebToken parameter.
     .OUTPUTS
         None
         This cmdlet returns no output. It sends the objects to the host. The host displays the objects this cmdlet sends to it.
