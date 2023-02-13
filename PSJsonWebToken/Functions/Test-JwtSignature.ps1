@@ -7,7 +7,7 @@ function Test-JwtSignature {
     .PARAMETER JsonWebToken
         The JSON Web Token containing the digital signature to be verified.
     .PARAMETER HashAlgorithm
-        The RSA hash algorithim for the signature. Acceptable values are SHA256, SHA384, and SHA512. Default value is SHA256.
+        The RSA hash algorithm for the signature. Acceptable values are SHA256, SHA384, and SHA512.
     .PARAMETER VerificationCertificate
         The certificate that will be used to verify the signature of the JSON Web Token. The private key is NOT needed for signature verification.
     .PARAMETER Key
