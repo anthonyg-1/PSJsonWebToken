@@ -7,10 +7,10 @@ function Test-JwtSecret {
         Attempts to obtain the secret for an HS256, HS384 or HS512-signed JSON Web Token from a wordlist containing potential secrets.
     .PARAMETER JsonWebToken
         The target JSON Web Token to test the list of secrets against.
-    .PARAMETER HashAlgorithm
-        The RSA hash algorithm for the signature. Acceptable values are SHA256, SHA384, and SHA512. Default value is SHA256.
     .PARAMETER WordListFilePath
         The wordlist file containing typical passwords/secrets to test the JWT against.
+    .PARAMETER HashAlgorithm
+        The RSA hash algorithm for the signature. Acceptable values are SHA256, SHA384, and SHA512. Default value is SHA256.
     .EXAMPLE
        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTYwNjE0MTA5MywiZXhwIjoxNjA2MTQxMzkzLCJqdGkiOiI1Njk5YTBlYTk3YzM0Yzc2OTlkZGZlNzNmNTIzOTI1MiIsInN1YiI6InVzZXJuYW1lQGNvbXBhbnkuY29tIn0.Ej86QALzH37R1zB7QhwwYdFjXL1UhG2E3n6nezEYONY"
        $jwt | Test-JwtSecret -WordListFilePath ./wordlist.txt
@@ -18,9 +18,14 @@ function Test-JwtSecret {
        Tests an HMAC-SHA256 signed JWT signature against a wordlist.
     .EXAMPLE
         $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE2NzYzMDg2MTksIm5iZiI6MTY3NjMwODYxOSwiZXhwIjoxNjc2MzA4OTE5LCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSIsImp0aSI6ImVlODczMzc1MmQ0YTQxNzNiOTA0ODcxZjFjODMxNzQ2In0.rKDBCWkALz7FBTavX9G4HNnaLcyQY8i1WurAs1aQpfDA5Tmi3EtKn6K1k2OO9V-J-94t0ToaypxrtePyc0h8rA"
-        $jwt | Test-JwtSecret -HashAlgorithm SHA512 -WordListFilePath ./wordlist.txt
+        $jwt | Test-JwtSecret -WordListFilePath ./wordlist.txt -HashAlgorithm SHA512
 
         Tests an HMAC-SHA512 signed JWT signature against a wordlist.
+    .EXAMPLE
+        $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTYwNjE0MTA5MywiZXhwIjoxNjA2MTQxMzkzLCJqdGkiOiI1Njk5YTBlYTk3YzM0Yzc2OTlkZGZlNzNmNTIzOTI1MiIsInN1YiI6InVzZXJuYW1lQGNvbXBhbnkuY29tIn0.Ej86QALzH37R1zB7QhwwYdFjXL1UhG2E3n6nezEYONY"
+        tjwts -t $jwt -f .\wordList.txt -v
+
+        Tests an HMAC-SHA256 signed JWT signature against a wordlist with verbose output using function and parameter aliases.
     .INPUTS
         System.String
         A string is received by the JsonWebToken parameter.
@@ -34,11 +39,9 @@ function Test-JwtSecret {
     [OutputType([System.String])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
-        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [ValidateLength(16, 8192)][Alias("JWT", "Token", "t")][String]$JsonWebToken,
 
-        [Parameter(Mandatory = $false, Position = 1)][ValidateSet("SHA256", "SHA384", "SHA512")][String]$HashAlgorithm = "SHA256",
-
-        [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 2)][Alias("Path", "FilePath")]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 1)][Alias("Path", "FilePath", "f")]
         [ValidateScript({
                 if ( -Not ($_ | Test-Path) ) {
                     $fileNotFoundExceptionMessage = "Wordlist file not found in the following path: {0}" -f $_
@@ -46,8 +49,9 @@ function Test-JwtSecret {
                     throw $FileNotFoundException
                 }
                 return $true
-            })][System.IO.FileInfo]$WordListFilePath
+            })][System.IO.FileInfo]$WordListFilePath,
 
+        [Parameter(Mandatory = $false, Position = 2)][Alias('alg')][ValidateSet("SHA256", "SHA384", "SHA512")][String]$HashAlgorithm = "SHA256"
     )
     BEGIN {
         $decodeExceptionMessage = "Unable to decode JWT."
@@ -59,7 +63,8 @@ function Test-JwtSecret {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
 
-        $wordList = [System.IO.File]::ReadAllLines($WordListFilePath)
+        $inputFilePath = Get-Item -Path $WordListFilePath | Select-Object -ExpandProperty FullName
+        $wordList = [System.IO.File]::ReadAllLines($inputFilePath)
 
         [int]$wordCount = $wordList.Count
         [int]$currentIndex = 1
