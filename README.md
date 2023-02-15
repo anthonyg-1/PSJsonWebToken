@@ -203,9 +203,9 @@ $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTY
 $jwt | Test-JwtSecret -WordListFilePath "./rockyou.txt"
 
 
-# Brute force an HMAC-SHA256 JWT in an attempt to obtain the secret used to sign it with verbose output using function and parameter aliases
+# Same brute force as above but using the aliased version of Test-JwtSecret
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYxNDEwOTMsIm5iZiI6MTYwNjE0MTA5MywiZXhwIjoxNjA2MTQxMzkzLCJqdGkiOiI1Njk5YTBlYTk3YzM0Yzc2OTlkZGZlNzNmNTIzOTI1MiIsInN1YiI6InVzZXJuYW1lQGNvbXBhbnkuY29tIn0.Ej86QALzH37R1zB7QhwwYdFjXL1UhG2E3n6nezEYONY"
-tjwts -t $jwt -f .\wordList.txt -v
+tjwts -t $jwt -f "./rockyou.txt" -v
 
 
 # Hack The Box "Under Construction" walkthrough (algorithm substitution and SQL injection)
