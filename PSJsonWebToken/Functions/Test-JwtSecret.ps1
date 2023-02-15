@@ -63,8 +63,17 @@ function Test-JwtSecret {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
 
-        $inputFilePath = Get-Item -Path $WordListFilePath | Select-Object -ExpandProperty FullName
-        $wordList = [System.IO.File]::ReadAllLines($inputFilePath)
+        [string]$inputFilePath = ""
+        [string[]]$wordList = @()
+        try {
+            $inputFilePath = Get-Item -Path $WordListFilePath | Select-Object -ExpandProperty FullName
+            $wordList = [System.IO.File]::ReadAllLines($inputFilePath)
+        }
+        catch {
+            $fileLoadExceptionMessage = "Unable to open the following file: {0}" -f $WordListFilePath
+            $FileLoadException = [System.IO.FileLoadException]::new($fileLoadExceptionMessage)
+            Write-Error -Exception $FileLoadException -ErrorAction Stop
+        }
 
         [int]$wordCount = $wordList.Count
         [int]$currentIndex = 1
