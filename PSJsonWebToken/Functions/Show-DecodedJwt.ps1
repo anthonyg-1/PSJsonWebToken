@@ -38,8 +38,8 @@ function Show-DecodedJwt {
         }
 
         # Get the header and payload as hashtables:
-        $header = Get-JsonWebTokenHeader -JsonWebToken $jwt
-        $payload = Get-JsonWebTokenPayload -JsonWebToken $jwt
+        $header = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken
+        $payload = Get-JsonWebTokenPayload -JsonWebToken $JsonWebToken
 
         # Serialize the hashtables into JSON and output via Write-Host
         $header | ConvertTo-Json | Write-Host -ForegroundColor Red -NoNewline
