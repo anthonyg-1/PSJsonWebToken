@@ -111,7 +111,7 @@ function New-JsonWebToken {
         else {
             if ($PSBoundParameters.ContainsKey("AddJtiClaim")) {
                 if (-not($_claims.ContainsKey("jti"))) {
-                    $_claims.Add("jti", (New-JwtId))
+                    $_claims.Add("jti", (New-Guid).Guid)
                 }
             }
 
@@ -159,7 +159,8 @@ function New-JsonWebToken {
             #5. Construct jws:
             $jwt = "{0}.{1}" -f $jwtSansSig, $rsaSig
         }
-        else { # Parameter set is HMAC of HMACSecure
+        else {
+            # Parameter set is HMAC of HMACSecure
             [string]$hmacKey = ""
             if ($PSCmdlet.ParameterSetName -eq "HMACSecure") {
                 $networkCredential = [System.Net.NetworkCredential]::new("", $SecureKey)
