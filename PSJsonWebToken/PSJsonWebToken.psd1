@@ -12,7 +12,7 @@
     RootModule           = '.\PSJsonWebToken.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.9.5'
+    ModuleVersion        = '1.9.6'
 
     # Compatibility
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -30,10 +30,10 @@
     Description          = 'This PowerShell module contains functions that facilitate the creation, validation, and decoding of JWTs (JSON Web Tokens) as well as the creation of JWKs (JSON Web Keys).'
 
     # Functions to export from this module
-    FunctionsToExport    = 'ConvertTo-Base64UrlEncodedString', 'ConvertFrom-Base64UrlEncodedString', 'New-JwtSignature', 'New-JsonWebToken', 'Test-JsonWebToken', 'ConvertFrom-EncodedJsonWebToken', 'New-JsonWebKeySet', 'New-JsonWebKey', 'Get-JsonWebTokenHeader', 'Get-JsonWebTokenPayload', 'Get-JsonWebTokenSignature', 'ConvertTo-JwtPart', 'Test-JwtStructure', 'Test-JwtSignature', 'Convert-DateTimeToEpoch', 'Convert-EpochToDateTime', 'Test-JwtDateRange', 'Convert-X509CertificateToBase64', 'Get-JwkCollection', 'Show-DecodedJwt', 'Show-EncodedJwt', 'Test-JwtSecret'
+    FunctionsToExport    = 'ConvertTo-Base64UrlEncodedString', 'ConvertFrom-Base64UrlEncodedString', 'Get-JwtKeyIdentifier', 'New-JwtSignature', 'New-JsonWebToken', 'Test-JsonWebToken', 'ConvertFrom-EncodedJsonWebToken', 'New-JsonWebKeySet', 'New-JsonWebKey', 'Get-JsonWebTokenHeader', 'Get-JsonWebTokenPayload', 'Get-JsonWebTokenSignature', 'ConvertTo-JwtPart', 'Test-JwtStructure', 'Test-JwtSignature', 'Convert-DateTimeToEpoch', 'Convert-EpochToDateTime', 'Test-JwtDateRange', 'Convert-X509CertificateToBase64', 'Get-JwkCollection', 'Show-DecodedJwt', 'Show-EncodedJwt', 'Test-JwtSecret'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport      = 'jwtd', 'djwt', 'njwt', 'NewJwt', 'CreateJwt', 'tjwt', 'sjwt', 'ValidateJwt', 'DecodeJwt', 'njwks', 'CreateJwkSet', 'njwk', 'CreateJwk', 'b64e', 'Encode', 'b64d', 'Decode', 'GetEpoch', 'gjwth', 'gjwtp', 'gjwtsig', 'gjwkc', 'tjwts'
+    AliasesToExport      = 'jwtd', 'djwt', 'njwt', 'NewJwt', 'CreateJwt', 'gjwtkid', 'tjwt', 'sjwt', 'ValidateJwt', 'DecodeJwt', 'njwks', 'CreateJwkSet', 'njwk', 'CreateJwk', 'b64e', 'Encode', 'b64d', 'Decode', 'GetEpoch', 'gjwth', 'gjwtp', 'gjwtsig', 'gjwkc', 'tjwts'
 
     # List of all files packaged with this module
     FileList             = 'PSJsonWebToken.psd1', 'PSJsonWebToken.psm1'
