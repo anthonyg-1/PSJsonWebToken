@@ -71,7 +71,7 @@ function New-JsonWebKey {
     PROCESS {
         [PSCustomObject]$jwkObject = $null
 
-        $encodedThumbprint = ConvertTo-Base64UrlEncodedString -Bytes ($Certificate.GetCertHash())
+        $encodedThumbprint = Get-JwtKeyIdentifier -Certificate $Certificate
 
         [string]$publicKeyUse = ""
         switch ($KeyOperations) {
