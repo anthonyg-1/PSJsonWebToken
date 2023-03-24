@@ -139,7 +139,7 @@ function New-JsonWebToken {
                 default { $rsaAlg = "RS256" }
             }
 
-            $encodedThumbprint = ConvertTo-Base64UrlEncodedString -Bytes $SigningCertificate.GetCertHash()
+            $encodedThumbprint = Get-JwtKeyIdentifier -Certificate $SigningCertificate
 
             $headerTable = [ordered]@{typ = "JWT"; alg = $rsaAlg; x5t = $encodedThumbprint; kid = $encodedThumbprint }
 
