@@ -143,10 +143,10 @@ function New-JsonWebKey {
         if ($PSCmdlet.ParameterSetName -eq "JSON") {
             [string]$jwkString = ""
             if ($PSBoundParameters.ContainsKey("Compress")) {
-                $jwkString = $jwkObject | ConvertTo-Json -Compress
+                $jwkString = $jwkObject | ConvertTo-Json -Depth 25 -Compress
             }
             else {
-                $jwkString = $jwkObject | ConvertTo-Json
+                $jwkString = $jwkObject | ConvertTo-Json -Depth 25
             }
             return $jwkString
         }
