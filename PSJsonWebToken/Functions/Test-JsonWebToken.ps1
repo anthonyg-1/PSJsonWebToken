@@ -150,9 +150,11 @@ function Test-JsonWebToken {
         }
 
         $headerTable = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken
-        if ($null -ne $headerTable["kid"]) {
-            $kid = $headerTable["kid"]
-            $kidMessage = "Identifier of the signing key for the JWT: {0}" -f $kid
+        [bool]$jwtHeaderContainsKid = $false
+        if ($headerTable.ContainsKey("kid")) {
+            $jwtHeaderContainsKid = $true
+            $headerKid = $headerTable["kid"]
+            $kidMessage = "Identifier of the signing key for the JWT: {0}" -f $headerKid
             Write-Verbose -Message $kidMessage
         }
 
@@ -165,11 +167,48 @@ function Test-JsonWebToken {
             }
         }
         elseif ($PSCmdlet.ParameterSetName -eq "JWK") {
-            try {
-                $signatureIsValid = Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $JsonWebKey -ErrorAction Stop
+            if ($jwtHeaderContainsKid) {
+                $deserializedJwk = $null
+                try {
+                    $deserializedJwk = $JsonWebKey | ConvertFrom-Json -ErrorAction Stop
+
+                    [bool]$kidMatches = $headerKid -eq $deserializedJwk.kid
+
+                    if ($kidMatches) {
+                        if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $JsonWebKey -ErrorAction Stop) {
+                            $signatureIsValid = $true
+                            $sigVerifiedAgainstJwkMessage = "Verified signature against the following JWK: {0}" -f $JsonWebKey
+                            Write-Verbose -Message $sigVerifiedAgainstJwkMessage
+                        }
+                        else {
+                            $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $JsonWebKey
+                            Write-Verbose -Message $jwkInvalidMessage
+                        }
+                    }
+                    else {
+                        $kidInvalidMessage = "Passed JWK does not contain the following signing key identifier: {0}" -f $headerKid
+                        Write-Verbose -Message $kidInvalidMessage
+                    }
+                }
+                catch {
+                    Write-Error -Exception $_.Exception -ErrorAction Stop
+                }
             }
-            catch {
-                Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
+            else {
+                try {
+                    if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $JsonWebKey -ErrorAction Stop) {
+                        $signatureIsValid = $true
+                        $sigVerifiedAgainstJwkMessage = "Verified signature against the following JWK: {0}" -f $JsonWebKey
+                        Write-Verbose -Message $sigVerifiedAgainstJwkMessage
+                    }
+                    else {
+                        $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $JsonWebKey
+                        Write-Verbose -Message $jwkInvalidMessage
+                    }
+                }
+                catch {
+                    Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
+                }
             }
         }
         elseif ($PSCmdlet.ParameterSetName -eq "URI") {
@@ -181,21 +220,54 @@ function Test-JsonWebToken {
                 Write-Error -Exception $_.Exception -ErrorAction Stop
             }
 
-            foreach ($jwk in $jsonWebKeys) {
+            $discoveredJwk = $jsonWebKeys | ConvertFrom-Json -ErrorAction Stop | Where-Object -Property kid -eq $headerKid
+            [bool]$kidMatches = $null -ne $discoveredJwk
+
+            if ($jwtHeaderContainsKid) {
                 try {
-                    if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $jwk -ErrorAction Stop) {
-                        $signatureIsValid = $true
-                        $jwkValidMessage = "Verified signature against the following JWK: {0}" -f $jwk
-                        Write-Verbose -Message $jwkValidMessage
-                        break
+                    if ($kidMatches) {
+                        $kidMatchesMessage = "JWT header contains key identifier that corresponds with the following key identifier in the JWK set: {0}. Attempting signature verification now." -f $headerKid
+                        Write-Verbose -Message $kidMatchesMessage
+                        [string]$targetJwk = $discoveredJwk | ConvertTo-Json -Depth 25 -Compress -ErrorAction Stop
+                        if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $targetJwk -ErrorAction Stop) {
+                            $signatureIsValid = $true
+                            $sigVerifiedAgainstJwkMessage = "Verified signature against the following JWK: {0}" -f $targetJwk
+                            Write-Verbose -Message $sigVerifiedAgainstJwkMessage
+                        }
+                        else {
+                            $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $targetJwk
+                            Write-Verbose -Message $jwkInvalidMessage
+                        }
                     }
                     else {
-                        $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $jwk
-                        Write-Verbose -Message $jwkInvalidMessage
+                        $kidInvalidMessage = "Unable to find a JWK with the following signing key identifier: {0}" -f $headerKid
+                        Write-Verbose -Message $kidInvalidMessage
                     }
                 }
                 catch {
                     Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
+                }
+            }
+            else {
+                $kidNotFoundMessage = "Signing key identifier (kid attribute) not found in JWT header. Iterating through collection of JWKs."
+                Write-Verbose -Message $kidNotFoundMessage
+
+                foreach ($jwk in $jsonWebKeys) {
+                    try {
+                        if (Test-JwtSignature -JsonWebToken $JsonWebToken -HashAlgorithm $HashAlgorithm -JsonWebKey $jwk -ErrorAction Stop) {
+                            $signatureIsValid = $true
+                            $sigVerifiedAgainstJwkMessage = "Verified signature against the following JWK: {0}" -f $jwk
+                            Write-Verbose -Message $sigVerifiedAgainstJwkMessage
+                            break
+                        }
+                        else {
+                            $jwkInvalidMessage = "Unable to verify signature against the following JWK: {0}" -f $jwk
+                            Write-Verbose -Message $jwkInvalidMessage
+                        }
+                    }
+                    catch {
+                        Write-Error -Exception $_.Exception -Category InvalidResult -ErrorAction Stop
+                    }
                 }
             }
         }
