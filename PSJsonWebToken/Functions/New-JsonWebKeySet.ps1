@@ -73,10 +73,10 @@ function New-JsonWebKeySet {
         $jwkSetObject = @{keys = @($jwkObject) }
 
         if ($PSBoundParameters.ContainsKey("Compress")) {
-            $jwkSet = $jwkSetObject | ConvertTo-Json -Compress
+            $jwkSet = $jwkSetObject | ConvertTo-Json -Depth 25 -Compress
         }
         else {
-            $jwkSet = $jwkSetObject | ConvertTo-Json
+            $jwkSet = $jwkSetObject | ConvertTo-Json -Depth 25
         }
 
         return $jwkSet
