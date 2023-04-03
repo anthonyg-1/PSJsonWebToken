@@ -1,6 +1,5 @@
-function Test-JwtStructure
-{
-<#
+function Test-JwtStructure {
+    <#
     .SYNOPSIS
         Tests a JWT for structural validity.
     .DESCRIPTION
@@ -30,34 +29,27 @@ function Test-JwtStructure
     #>
     [CmdletBinding()]
     [OutputType([System.Boolean])]
-    Param ( [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)][ValidateLength(16,8192)][System.String]$JsonWebToken,
+    Param ( [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)][ValidateLength(16, 8192)][System.String]$JsonWebToken,
 
-            [Parameter(Mandatory=$false,ValueFromPipeline=$false,Position=1)][Switch]$VerifySignaturePresent
+        [Parameter(Mandatory = $false, ValueFromPipeline = $false, Position = 1)][Switch]$VerifySignaturePresent
     )
-     PROCESS
-     {
+    PROCESS {
         $arrayCellCount = $JsonWebToken.Split(".") | Measure-Object | Select-Object -ExpandProperty Count
 
-        if ($PSBoundParameters.ContainsKey("VerifySignaturePresent"))
-        {
-            if ($arrayCellCount -lt 3)
-            {
+        if ($PSBoundParameters.ContainsKey("VerifySignaturePresent")) {
+            if ($arrayCellCount -lt 3) {
                 return $false
             }
-            else
-            {
+            else {
                 $jwtSignature = $JsonWebToken.Split(".")[2]
 
-                if ($jwtSignature.Length -le 8)
-                {
+                if ($jwtSignature.Length -le 8) {
                     return $false
                 }
             }
         }
-        else
-        {
-            if ($arrayCellCount -lt 2)
-            {
+        else {
+            if ($arrayCellCount -lt 2) {
                 return $false
             }
         }
@@ -65,54 +57,50 @@ function Test-JwtStructure
         # Test deserialization against header:
         $jwtHeader = $JsonWebToken.Split(".")[0]
 
-        if ($jwtHeader.Length -le 8)
-        {
+        if ($jwtHeader.Length -le 8) {
             return $false
         }
 
         [string]$jwtHeaderDecoded = ""
-        try
-        {
+        try {
             $jwtHeaderDecoded = $jwtHeader | ConvertFrom-Base64UrlEncodedString
         }
-        catch
-        {
+        catch {
             return $false
         }
 
-        try
-        {
-            $jwtHeaderDecoded | ConvertFrom-Json -ErrorAction Stop | Out-Null
+        $jwtHeaderDeserialized = $null
+        try {
+            $jwtHeaderDeserialized = $jwtHeaderDecoded | ConvertFrom-Json -ErrorAction Stop
         }
-        catch
-        {
+        catch {
+            return $false
+        }
+
+        # Per RFC 7515 section 4.1.1, alg is the only required parameter in a JWT header:
+        if ($null -eq $jwtHeaderDeserialized.alg) {
             return $false
         }
 
         # Test deserialization against payload:
         $jwtPayload = $JsonWebToken.Split(".")[1]
 
-        if ($jwtPayload.Length -le 8)
-        {
+        if ($jwtPayload.Length -le 8) {
             return $false
         }
 
         [string]$jwtPayloadDecoded = ""
-        try
-        {
+        try {
             $jwtPayloadDecoded = $jwtPayload | ConvertFrom-Base64UrlEncodedString
         }
-        catch
-        {
+        catch {
             return $false
         }
 
-        try
-        {
+        try {
             $jwtPayloadDecoded | ConvertFrom-Json -ErrorAction Stop | Out-Null
         }
-        catch
-        {
+        catch {
             return $false
         }
 
