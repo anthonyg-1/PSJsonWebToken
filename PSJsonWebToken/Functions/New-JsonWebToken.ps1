@@ -51,6 +51,7 @@ function New-JsonWebToken {
             The JSON Web Token is returned as a base64 URL encoded string.
     .LINK
         https://tools.ietf.org/html/rfc7519
+        https://tools.ietf.org/html/rfc7515
         New-JsonWebKeySet
 	Test-JsonWebToken
         ConvertFrom-EncodedJsonWebToken
