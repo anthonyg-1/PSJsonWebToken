@@ -195,9 +195,6 @@ $jwtPayload = Get-JsonWebTokenPayload -JsonWebToken $jwt -AsEncodedString
 # 4. Generate JWK to be placed in header:
 $jwk = $cert | New-JsonWebKey
 
-# 4. Generate JWK to be placed in header:
-$jwk = $cert | New-JsonWebKey
-
 # 5. Craft JWT header with JWK inserted as jwk claim as well as the kid and x5t claims being populated with the JWKs key identifier (kid):
 $jwtHeader = @{typ = "JWT"; alg = "RS256"; jwk = $jwk; kid = $jwk.kid; x5t = $jwk.kid } | ConvertTo-JwtPart
 
