@@ -46,6 +46,6 @@ function Show-EncodedJwt {
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         Write-Host -Object $payload -ForegroundColor Cyan -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
-        Write-Host -Object $signature -ForegroundColor Green -NoNewline
+        Write-Host -Object $signature -ForegroundColor Green
     }
 }
