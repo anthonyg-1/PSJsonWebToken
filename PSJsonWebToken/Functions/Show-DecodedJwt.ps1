@@ -32,8 +32,16 @@ function Show-DecodedJwt {
         $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
     }
     PROCESS {
-        [bool]$hasValidJwtStructure = Test-JwtStructure -JsonWebToken $JsonWebToken -VerifySignaturePresent
+        [bool]$hasValidJwtStructure = Test-JwtStructure -JsonWebToken $JsonWebToken
         if (-not($hasValidJwtStructure)) {
+            Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
+        }
+
+        $arrayCellCount = $JsonWebToken.Split(".") | Measure-Object | Select-Object -ExpandProperty Count
+
+        if ($arrayCellCount -lt 3) {
+            $decodeExceptionMessage = "Unable to decode JWT."
+            $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
 
@@ -46,6 +54,8 @@ function Show-DecodedJwt {
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         $payload | ConvertTo-Json | Write-Host -ForegroundColor Cyan -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
-        Write-Host -Object "[Signature]" -ForegroundColor Green
+        if (($JsonWebToken.Split(".")[2] -gt 12)) {
+            Write-Host -Object "[Signature]" -ForegroundColor Green
+        }
     }
 }
