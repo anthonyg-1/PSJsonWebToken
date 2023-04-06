@@ -61,20 +61,6 @@ function ConvertFrom-EncodedJsonWebToken {
         $serializedPayload = $deserializedPayload | ConvertTo-Json -Compress
         $signatureString = $JsonWebToken.Split(".")[2]
 
-        <#
-        if ($deserializedHeader.ContainsKey("typ"))
-        {
-            if ($deserializedHeader.Item("typ") -ne "JWT")
-            {
-                Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
-            }
-        }
-        else
-        {
-            Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
-        }
-        #>
-
         $decodedJsonWebToken = [PSJsonWebToken.DecodedJsonWebToken]::new()
         $decodedJsonWebToken.Header = $serializedHeader
         $decodedJsonWebToken.Payload = $serializedPayload
@@ -109,18 +95,33 @@ function ConvertFrom-EncodedJsonWebToken {
         }
 
         if ($deserializedPayload.ContainsKey("nbf")) {
-            $notBefore = Convert-EpochToDateTime -Epoch $deserializedPayload.nbf
-            $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name NotBefore -Value $notBefore
+            try {
+                $notBefore = Convert-EpochToDateTime -Epoch $deserializedPayload.nbf
+                $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name NotBefore -Value $notBefore
+            }
+            catch {
+                Write-Error -Exception $_.Exception
+            }
         }
 
         if ($deserializedPayload.ContainsKey("iat")) {
-            $issuedAt = Convert-EpochToDateTime -Epoch $deserializedPayload.iat
-            $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name IssuedAt -Value $issuedAt
+            try {
+                $issuedAt = Convert-EpochToDateTime -Epoch $deserializedPayload.iat
+                $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name IssuedAt -Value $issuedAt
+            }
+            catch {
+                Write-Error -Exception $_.Exception
+            }
         }
 
         if ($deserializedPayload.ContainsKey("exp")) {
-            $expiration = Convert-EpochToDateTime -Epoch $deserializedPayload.exp
-            $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name Expiration -Value $expiration
+            try {
+                $expiration = Convert-EpochToDateTime -Epoch $deserializedPayload.exp
+                $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name Expiration -Value $expiration
+            }
+            catch {
+                Write-Error -Exception $_.Exception
+            }
         }
 
         return $decodedJsonWebToken
