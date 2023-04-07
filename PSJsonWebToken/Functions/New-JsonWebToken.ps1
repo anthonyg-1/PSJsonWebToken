@@ -24,6 +24,8 @@ function New-JsonWebToken {
         This is the secret key used to generate an HMAC signature expressed as a System.Security.SecureString.
     .PARAMETER ExcludeDefaultClaims
         Excludes the jti, iat, and exp default claims from the payload when using the HMAC parameter set.
+    .PARAMETER NoSignature
+        Tells this function to create an unsigned JWT. This is meant for security testing only and should never be used when a valid JWT is required!
     .EXAMPLE
 
         $claims = @{sub="$env:USERDOMAIN\$env:USERNAME";
@@ -45,6 +47,10 @@ function New-JsonWebToken {
         $hmacJwt = New-JsonWebToken -Claims @{sub="tonyg"} -HashAlgorithm SHA256 -SecureKey $secureStringKey -TimeToLive 300
 
         Generates an HMAC-SHA256 signed JWT with the HMAC key passed as a SecureString.
+    .EXAMPLE
+        New-JsonWebToken -Claims @{sub="tonyg"} -NoSignature
+
+        Creates an unsigned JWT for testing purposes.
     .OUTPUTS
         System.String
 
@@ -94,7 +100,9 @@ function New-JsonWebToken {
         [ValidateNotNullOrEmpty()]
         [System.Security.SecureString]$SecureKey,
 
-        [Parameter(Mandatory = $false, Position = 8)][Switch]$ExcludeDefaultClaims
+        [Parameter(Mandatory = $false, Position = 8)][Switch]$ExcludeDefaultClaims,
+
+        [Parameter(Mandatory = $false, ParameterSetName = "Unsigned", Position = 9)][Switch]$NoSignature
 
     )
 
@@ -122,6 +130,16 @@ function New-JsonWebToken {
             else {
                 $payload = New-JwtPayloadString -Claims $_claims
             }
+        }
+
+        # Short circuit if NoSignature is called:
+        if ($PSBoundParameters.ContainsKey("NoSignature")) {
+            $headerTable = [ordered]@{typ = "JWT"; alg = "none" }
+            $header = $headerTable | ConvertTo-JwtPart
+
+            $jwtSansSig = "{0}.{1}." -f $header, $payload
+
+            return $jwtSansSig
         }
 
         if ($PSCmdlet.ParameterSetName -eq "RSA") {
