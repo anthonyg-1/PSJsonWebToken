@@ -42,10 +42,12 @@ function Show-EncodedJwt {
         $signature = Get-JsonWebTokenSignature -JsonWebToken $JsonWebToken -AsEncodedString
 
         # Write each of the three JWT parts seperated by periods:
+        Write-Host -Object ""
         Write-Host -Object $header -ForegroundColor Red -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         Write-Host -Object $payload -ForegroundColor Cyan -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         Write-Host -Object $signature -ForegroundColor Green
+        Write-Host -Object ""
     }
 }
