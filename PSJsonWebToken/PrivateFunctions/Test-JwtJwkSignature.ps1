@@ -5,7 +5,7 @@
     param
     (
         [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
-        [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [ValidateLength(16,131072)][Alias("JWT", "Token")][String]$JsonWebToken,
 
         [Parameter(Mandatory=$true,Position=1)][Alias("jwk")][ValidateLength(12, 1073741791)][String]$JsonWebKey,
 
