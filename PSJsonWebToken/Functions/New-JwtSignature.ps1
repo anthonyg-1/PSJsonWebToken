@@ -44,7 +44,7 @@
     [OutputType([System.String])]
     Param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true,Position=0)]
-        [ValidateLength(16,6144)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [ValidateLength(16,131072)][Alias("JWT", "Token")][String]$JsonWebToken,
 
         [Parameter(Mandatory=$false,Position=1)]
         [ValidateSet("SHA256","SHA384","SHA512")]

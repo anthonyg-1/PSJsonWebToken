@@ -29,7 +29,7 @@ function Test-JwtStructure {
     #>
     [CmdletBinding()]
     [OutputType([System.Boolean])]
-    Param ( [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)][ValidateLength(16, 8192)][System.String]$JsonWebToken,
+    Param ( [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)][ValidateLength(16, 131072)][System.String]$JsonWebToken,
 
         [Parameter(Mandatory = $false, ValueFromPipeline = $false, Position = 1)][Switch]$VerifySignaturePresent
     )

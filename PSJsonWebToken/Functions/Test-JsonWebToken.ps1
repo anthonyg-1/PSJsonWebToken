@@ -92,7 +92,7 @@ function Test-JsonWebToken {
     [OutputType([System.Boolean])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)]
-        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [ValidateLength(16, 131072)][Alias("JWT", "Token")][String]$JsonWebToken,
 
         [Parameter(Mandatory = $false, Position = 2)]
         [ValidateSet("SHA256", "SHA384", "SHA512")]
@@ -113,10 +113,10 @@ function Test-JsonWebToken {
 
         [Parameter(Mandatory = $true, ParameterSetName = "URI", Position = 3)][Alias('OidcUri', 'JwkUri')][System.Uri]$Uri,
 
-        [Parameter(Mandatory = $false, Position = 4)][ValidateLength(2, 8192)][Alias("aud")][String]$Audience,
+        [Parameter(Mandatory = $false, Position = 4)][ValidateLength(2, 131072)][Alias("aud")][String]$Audience,
 
         [Parameter(Mandatory = $false, Position = 5)]
-        [ValidateLength(2, 8192)][Alias("iss")][String]$Issuer,
+        [ValidateLength(2, 131072)][Alias("iss")][String]$Issuer,
 
         [Parameter(Mandatory = $false, Position = 6)]
         [Switch]$SkipExpirationCheck

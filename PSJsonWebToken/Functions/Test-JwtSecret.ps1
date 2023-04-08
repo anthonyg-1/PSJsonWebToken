@@ -39,7 +39,7 @@ function Test-JwtSecret {
     [OutputType([System.String])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
-        [ValidateLength(16, 8192)][Alias("JWT", "Token", "t")][String]$JsonWebToken,
+        [ValidateLength(16, 131072)][Alias("JWT", "Token", "t")][String]$JsonWebToken,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 1)][Alias("Path", "FilePath", "f")]
         [ValidateScript({

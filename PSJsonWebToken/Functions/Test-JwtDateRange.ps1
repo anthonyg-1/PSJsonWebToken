@@ -25,7 +25,7 @@ function Test-JwtDateRange
     [OutputType([System.Boolean])]
     Param (
             [Parameter(Mandatory=$true,ValueFromPipeline=$false,Position=0)]
-            [ValidateLength(16,8192)][Alias("JWT", "Token")][String]$JsonWebToken
+            [ValidateLength(16,131072)][Alias("JWT", "Token")][String]$JsonWebToken
           )
 
     BEGIN

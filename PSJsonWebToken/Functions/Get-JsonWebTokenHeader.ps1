@@ -44,7 +44,7 @@ function Get-JsonWebTokenHeader {
     [OutputType([System.String], ParameterSetName = "JSON")]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
-        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [ValidateLength(16, 131072)][Alias("JWT", "Token")][String]$JsonWebToken,
 
         [Parameter(ParameterSetName = "Base64", Mandatory = $true,
             ValueFromPipeline = $false,

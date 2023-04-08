@@ -61,7 +61,7 @@ function Test-JwtSignature {
     [OutputType([System.Boolean])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)]
-        [ValidateLength(16, 8192)][Alias("JWT", "Token")][String]$JsonWebToken,
+        [ValidateLength(16, 131072)][Alias("JWT", "Token")][String]$JsonWebToken,
 
         [Parameter(Mandatory = $true, Position = 1)][ValidateSet("SHA256", "SHA384", "SHA512")][String]$HashAlgorithm,
 
