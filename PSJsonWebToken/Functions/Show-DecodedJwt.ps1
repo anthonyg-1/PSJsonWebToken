@@ -50,6 +50,7 @@ function Show-DecodedJwt {
         $payload = Get-JsonWebTokenPayload -JsonWebToken $JsonWebToken
 
         # Serialize the hashtables into JSON and output via Write-Host
+        Write-Host -Object ""
         $header | ConvertTo-Json | Write-Host -ForegroundColor Red -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         $payload | ConvertTo-Json | Write-Host -ForegroundColor Cyan -NoNewline
@@ -57,5 +58,6 @@ function Show-DecodedJwt {
         if (($JsonWebToken.Split(".")[2] -gt 12)) {
             Write-Host -Object "[Signature]" -ForegroundColor Green
         }
+        Write-Host -Object ""
     }
 }
