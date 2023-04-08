@@ -1,5 +1,4 @@
-function ConvertTo-JwtPart
-{
+function ConvertTo-JwtPart {
     <#
     .SYNOPSIS
         Converts an object to a base 64 URL encoded compressed JSON string.
@@ -38,23 +37,19 @@ function ConvertTo-JwtPart
     [CmdletBinding()]
     [OutputType([System.String])]
     Param (
-            [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true,Position=0)]
-            [ValidateNotNullOrEmpty()][System.Object]$InputObject
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0)]
+        [ValidateNotNullOrEmpty()][System.Object]$InputObject
     )
-    BEGIN
-    {
+    BEGIN {
         $argumentExceptionMessage = "Unable to serialize and base64 URL encode passed InputObject."
         $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $argumentExceptionMessage
     }
-    PROCESS
-    {
+    PROCESS {
         [string]$base64UrlEncodedString = ""
-        try
-        {
-            $base64UrlEncodedString = $InputObject | ConvertTo-Json -Compress | ConvertTo-Base64UrlEncodedString
+        try {
+            $base64UrlEncodedString = $InputObject | ConvertTo-Json -Depth 25 -Compress | ConvertTo-Base64UrlEncodedString
         }
-        catch
-        {
+        catch {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
 
