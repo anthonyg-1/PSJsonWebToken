@@ -55,7 +55,7 @@ function Show-DecodedJwt {
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         $payload | ConvertTo-Json | Write-Host -ForegroundColor Cyan -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
-        if (($JsonWebToken.Split(".")[2] -gt 12)) {
+        if (($JsonWebToken.Split(".")[2] -gt 8)) {
             Write-Host -Object "[Signature]" -ForegroundColor Green
         }
         Write-Host -Object ""
