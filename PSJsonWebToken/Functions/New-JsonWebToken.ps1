@@ -11,7 +11,7 @@ function New-JsonWebToken {
     .PARAMETER TimeToLive
         The lifetime of the token expressed in seconds.
     .PARAMETER HashAlgorithm
-        The hash algorithim for the signature. Acceptable values are SHA256, SHA384, and SHA512. Default value is SHA256.
+        The hash algorthim for the signature. Acceptable values are SHA256, SHA384, and SHA512. Default value is SHA256.
     .PARAMETER JwkUri
         The URI for JSON Web Keys to verify the signature of the generated token. This is expressed as the attribute 'jku' in the header.
     .PARAMETER IncludeJwk
@@ -120,7 +120,7 @@ function New-JsonWebToken {
 
         [Parameter(Mandatory = $false, ParameterSetName = "Unsigned", Position = 13)][Switch]$NoSignature,
 
-        [Parameter(Mandatory = $false, Position = 14)][ValidateLength(8, 2083)][String]$CustomKeyIdentifier
+        [Parameter(Mandatory = $false, Position = 14)][ValidateLength(0, 32768)][String]$CustomKeyIdentifier
     )
 
     PROCESS {
