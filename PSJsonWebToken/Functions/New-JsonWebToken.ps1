@@ -32,6 +32,8 @@ function New-JsonWebToken {
         Excludes the nbf, iat, and exp default claims from the payload when using the HMAC parameter set.
     .PARAMETER NoSignature
         Tells this function to create an unsigned JWT. This is meant for security testing only and should never be used when a valid JWT is required!
+    .PARAMETER CustomKeyIdentifier
+        Tells this function to either add or override (in the case of the RSA parameter set) the kid attribute in the JWT header with the specified value.
     .EXAMPLE
         $claims = @{sub="$env:USERDOMAIN\$env:USERNAME";
                     iss="$env:COMPUTERNAME@$env:USERDNSDOMAIN"}
@@ -114,9 +116,11 @@ function New-JsonWebToken {
         [ValidateNotNullOrEmpty()]
         [System.Security.SecureString]$SecureKey,
 
-        [Parameter(Mandatory = $false, Position = 12)][Switch]$ExcludeDefaultClaims,
+        [Parameter(Mandatory = $false, Position = 12)][Alias('ExcludeDefaultDateClaims')][Switch]$ExcludeDefaultClaims,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "Unsigned", Position = 13)][Switch]$NoSignature
+        [Parameter(Mandatory = $false, ParameterSetName = "Unsigned", Position = 13)][Switch]$NoSignature,
+
+        [Parameter(Mandatory = $false, Position = 14)][ValidateLength(8, 2083)][String]$CustomKeyIdentifier
     )
 
     PROCESS {
@@ -127,16 +131,17 @@ function New-JsonWebToken {
 
         [HashTable]$_claims = $Claims
 
+        if ($PSBoundParameters.ContainsKey("AddJtiClaim")) {
+            if ($_claims.ContainsKey("jti")) {
+                $_claims.Remove("jti") | Out-Null
+            }
+            $_claims.Add("jti", (New-Guid).Guid)
+        }
+
         if ($PSBoundParameters.ContainsKey("ExcludeDefaultClaims")) {
             $payload = $_claims | ConvertTo-JwtPart
         }
         else {
-            if ($PSBoundParameters.ContainsKey("AddJtiClaim")) {
-                if (-not($_claims.ContainsKey("jti"))) {
-                    $_claims.Add("jti", (New-Guid).Guid)
-                }
-            }
-
             if ($PSBoundParameters.ContainsKey("NotBeforeSkew")) {
                 $payload = New-JwtPayloadString -Claims $_claims -NotBeforeSkew $NotBeforeSkew
             }
@@ -147,11 +152,16 @@ function New-JsonWebToken {
 
         # Short circuit if NoSignature is called:
         if ($PSBoundParameters.ContainsKey("NoSignature")) {
-            $headerTable = [ordered]@{typ = "JWT"; alg = "none" }
+            $headerTable = @{}
+            if ($PSBoundParameters.ContainsKey("CustomKeyIdentifier")) {
+                $headerTable = [ordered]@{typ = "JWT"; alg = "none"; kid = $CustomKeyIdentifier }
+            }
+            else {
+                $headerTable = [ordered]@{typ = "JWT"; alg = "none" }
+            }
+
             $header = $headerTable | ConvertTo-JwtPart
-
             $jwtSansSig = "{0}.{1}." -f $header, $payload
-
             return $jwtSansSig
         }
 
@@ -171,9 +181,15 @@ function New-JsonWebToken {
                 default { $rsaAlg = "RS256" }
             }
 
-            $encodedThumbprint = Get-JwtKeyIdentifier -Certificate $SigningCertificate
-
-            $headerTable = [ordered]@{typ = "JWT"; alg = $rsaAlg; x5t = $encodedThumbprint; kid = $encodedThumbprint }
+            # If CustomKeyIdentifier is called, exclude x5t from the header:
+            $headerTable = @{}
+            if ($PSBoundParameters.ContainsKey("CustomKeyIdentifier")) {
+                $headerTable = [ordered]@{typ = "JWT"; alg = $rsaAlg; kid = $CustomKeyIdentifier }
+            }
+            else {
+                $encodedThumbprint = Get-JwtKeyIdentifier -Certificate $SigningCertificate
+                $headerTable = [ordered]@{typ = "JWT"; alg = $rsaAlg; x5t = $encodedThumbprint; kid = $encodedThumbprint }
+            }
 
             if ($PSBoundParameters.ContainsKey("JwkUri")) {
                 $headerTable.Add("jku", $JwkUri)
@@ -206,13 +222,13 @@ function New-JsonWebToken {
             $jwtSansSig = "{0}.{1}" -f $header, $payload
 
             #4. Generate signature for concatenated header and payload:
-            #[string]$rsaSig = ""
-            #try {
-            $rsaSig = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm $HashAlgorithm -SigningCertificate $SigningCertificate
-            #}
-            #catch {
-            #   Write-Error -Exception $_.Exception -Category InvalidArgument -ErrorAction Stop
-            #}
+            [string]$rsaSig = ""
+            try {
+                $rsaSig = New-JwtSignature -JsonWebToken $jwtSansSig -HashAlgorithm $HashAlgorithm -SigningCertificate $SigningCertificate
+            }
+            catch {
+                Write-Error -Exception $_.Exception -Category InvalidArgument -ErrorAction Stop
+            }
 
             #5. Construct jws:
             $jwt = "{0}.{1}" -f $jwtSansSig, $rsaSig
@@ -237,7 +253,15 @@ function New-JsonWebToken {
             }
 
             #1. Construct header:
-            $header = [ordered]@{typ = "JWT"; alg = $hmacAlg } | ConvertTo-JwtPart
+            $headerTable = @{}
+            if ($PSBoundParameters.ContainsKey("CustomKeyIdentifier")) {
+                $headerTable = [ordered]@{typ = "JWT"; alg = $hmacAlg; kid = $CustomKeyIdentifier }
+            }
+            else {
+                $headerTable = [ordered]@{typ = "JWT"; alg = $hmacAlg }
+            }
+
+            $header = $headerTable | ConvertTo-JwtPart
 
             #2. Payload is constructed at beginning of PROCESS block.
 
