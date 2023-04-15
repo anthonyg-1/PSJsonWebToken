@@ -1,4 +1,4 @@
-﻿function Get-JwkCollection {
+function Get-JwkCollection {
     <#
     .SYNOPSIS
         Gets a collection of JSON Web Keys (JWKs) from a URI.
@@ -80,11 +80,17 @@
                 Write-Error -Exception $ArgumentException -ErrorAction Stop
             }
             else {
-                if ($AsJson) {
-                    $jwks += ($key | ConvertTo-Json)
+                if ($key.kty -eq "RSA") {
+                    if ($AsJson) {
+                        $jwks += ($key | ConvertTo-Json)
+                    }
+                    else {
+                        $jwks += $key
+                    }
                 }
                 else {
-                    $jwks += $key
+                    $ArgumentException = 'Only RSA JSON Web Keys are supported at this time.'
+                    Write-Error -Exception $ArgumentException -ErrorAction Stop
                 }
             }
         }
