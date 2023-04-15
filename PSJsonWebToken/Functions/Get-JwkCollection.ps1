@@ -57,7 +57,6 @@ function Get-JwkCollection {
             Write-Error -Exception $_.Exception -ErrorAction Stop
         }
 
-
         if ($null -eq $response.keys) {
             if ($null -ne $response.jwks_uri) {
                 try {
