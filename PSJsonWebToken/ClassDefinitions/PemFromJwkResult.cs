@@ -20,6 +20,6 @@ namespace PSJsonWebToken
         /// <summary>
         /// The public key as an unformatted base64 certificate
         /// </summary>
-        public string UnformattedCertificate { get; set; }
+        public string PublicKeyUnformatted { get; set; }
     }
 }
