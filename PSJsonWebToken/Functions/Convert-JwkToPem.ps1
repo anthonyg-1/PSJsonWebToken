@@ -23,44 +23,47 @@ function Convert-JwkToPem {
     [Alias('cjwk')]
     [OutputType([PSJsonWebToken.PemFromJwkResult])]
     Param (
-        [Parameter(Mandatory = $true, ParameterSetName = "URI", Position = 1)][Alias('OidcUri', 'JwkUri')][System.Uri]$Uri
+        [Parameter(Mandatory = $true, ParameterSetName = "URI", Position = 0)][Alias('OidcUri', 'JwkUri')][System.Uri]$Uri
     )
     PROCESS {
-        $jsonWebKeys = @()
-        try {
-            $jsonWebKeys += (Get-JwkCollection -Uri $Uri -ErrorAction Stop)
-        }
-        catch {
-            Write-Error -Exception $_.Exception -ErrorAction Stop
-        }
+        if ($PsCmdlet.ParameterSetName -eq "URI") {
 
-        $SerializationException = [SerializationException]::new("Unable to deserialize JSON Web Key.")
-
-        foreach ($jwk in $jsonWebKeys) {
+            $jsonWebKeys = @()
             try {
-                $rsaParams = [RSAParameters]::new()
-
-                $rsaParams.Exponent = $jwk.e | ConvertFrom-Base64UrlEncodedString -AsBytes -ErrorAction Stop
-                $rsaParams.Modulus = $jwk.n | ConvertFrom-Base64UrlEncodedString -AsBytes -ErrorAction Stop
-
-                $rsaCryptoSp = [RSACryptoServiceProvider]::new()
-                $rsaCryptoSp.ImportParameters($rsaParams)
-
-                [byte[]]$publicKeyBytes = $rsaCryptoSp.ExportSubjectPublicKeyInfo()
-                [string]$publicKeyUnformatted = ConvertTo-Base64UrlEncodedString -Bytes $publicKeyBytes -ErrorAction Stop
-                [string]$publicKeyPem = $rsaCryptoSp.ExportSubjectPublicKeyInfoPem()
-
-                $rsaCryptoSp.Dispose()
-
-                $result = [PSJsonWebToken.PemFromJwkResult]::new()
-                $result.JwkIdentifier = $jwk.kid
-                $result.Pem = $publicKeyPem
-                $result.UnformattedCertificate = $publicKeyUnformatted
-
-                Write-Output -InputObject $result
+                $jsonWebKeys += (Get-JwkCollection -Uri $Uri -ErrorAction Stop)
             }
             catch {
-                Write-Error -Exception $SerializationException -Category InvalidData -ErrorAction Stop
+                Write-Error -Exception $_.Exception -ErrorAction Stop
+            }
+
+            $SerializationException = [SerializationException]::new("Unable to deserialize JSON Web Key.")
+
+            foreach ($jwk in $jsonWebKeys) {
+                try {
+                    $rsaParams = [RSAParameters]::new()
+
+                    $rsaParams.Exponent = $jwk.e | ConvertFrom-Base64UrlEncodedString -AsBytes -ErrorAction Stop
+                    $rsaParams.Modulus = $jwk.n | ConvertFrom-Base64UrlEncodedString -AsBytes -ErrorAction Stop
+
+                    $rsaCryptoSp = [RSACryptoServiceProvider]::new()
+                    $rsaCryptoSp.ImportParameters($rsaParams)
+
+                    [byte[]]$publicKeyBytes = $rsaCryptoSp.ExportSubjectPublicKeyInfo()
+                    [string]$publicKeyUnformatted = ConvertTo-Base64UrlEncodedString -Bytes $publicKeyBytes -ErrorAction Stop
+                    [string]$publicKeyPem = $rsaCryptoSp.ExportSubjectPublicKeyInfoPem()
+
+                    $rsaCryptoSp.Dispose()
+
+                    $result = [PSJsonWebToken.PemFromJwkResult]::new()
+                    $result.JwkIdentifier = $jwk.kid
+                    $result.Pem = $publicKeyPem
+                    $result.PublicKeyUnformatted = $publicKeyUnformatted
+
+                    Write-Output -InputObject $result
+                }
+                catch {
+                    Write-Error -Exception $SerializationException -Category InvalidData -ErrorAction Stop
+                }
             }
         }
     }
