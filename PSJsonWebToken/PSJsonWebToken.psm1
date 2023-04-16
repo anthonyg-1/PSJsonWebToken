@@ -2,16 +2,18 @@ using namespace System
 using namespace System.IO
 using namespace System.Text
 using namespace System.Collections.Generic
+using namespace System.Runtime.Serialization
 using namespace System.Security.Cryptography
 using namespace System.Security.Cryptography.X509Certificates
 
 <#
 .SYNOPSIS
-    Provides functions that create and validate JSON Web Tokens as well as JSON Web Keys.
+    Provides functions that create and validate JSON Web Tokens and JSON Web Keys. The functions in this module can also be used to perform security testing against endpoints that consume JWTs.
 .DESCRIPTION
     Provides functions that create and validate JSON Web Tokens as well as JSON Web Keys per the following RFCs:
 
     https://tools.ietf.org/html/rfc7519
+    https://tools.ietf.org/html/rfc7515
     https://tools.ietf.org/html/rfc7517
 #>
 
