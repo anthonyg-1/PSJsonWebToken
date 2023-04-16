@@ -18,8 +18,8 @@ namespace PSJsonWebToken
         public string Pem { get; set; }
 
         /// <summary>
-        /// The public key as an unformatted PEM
+        /// The public key as an unformatted base64 certificate
         /// </summary>
-        public string PemUnformatted { get; set; }
+        public string UnformattedCertificate { get; set; }
     }
 }
