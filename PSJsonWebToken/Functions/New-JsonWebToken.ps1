@@ -65,6 +65,7 @@ function New-JsonWebToken {
     .LINK
         https://tools.ietf.org/html/rfc7519
         https://tools.ietf.org/html/rfc7515
+        https://tools.ietf.org/html/rfc7517
         New-JsonWebKeySet
 	Test-JsonWebToken
         ConvertFrom-EncodedJsonWebToken
