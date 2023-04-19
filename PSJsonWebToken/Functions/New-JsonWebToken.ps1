@@ -140,6 +140,12 @@ function New-JsonWebToken {
         }
 
         if ($PSBoundParameters.ContainsKey("ExcludeDefaultClaims")) {
+            $dateRangeAttribs = @("iat", "nbf", "exp")
+            foreach ($attrib in $dateRangeAttribs) {
+                if ($_claims.ContainsKey($attrib)) {
+                    $_claims.Remove($attrib)
+                }
+            }
             $payload = $_claims | ConvertTo-JwtPart
         }
         else {
