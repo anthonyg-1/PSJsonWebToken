@@ -30,7 +30,7 @@ function Convert-JwkToPem {
 
             An object containing the JWK ID, PEM and unformatted Base64 public key.    .
     .LINK
-	https://tools.ietf.org/html/rfc7517
+		https://tools.ietf.org/html/rfc7517
         https://www.rfc-editor.org/rfc/rfc7468
         Select-Object
         Out-File
