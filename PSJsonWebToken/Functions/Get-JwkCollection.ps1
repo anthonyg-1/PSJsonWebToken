@@ -75,7 +75,7 @@ function Get-JwkCollection {
 
         foreach ($key in $response.keys) {
             if (($null -eq $key.kty) -or ($null -eq $key.n) -or ($null -eq $key.e)) {
-                $ArgumentException = 'JSON Web Key schema validation failed. Ensure that a valid JWK is passed that contains the key type expressed as "kty", a public exponent as "e”, and modulus as "n" parameters per RFC 7517.'
+                $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList 'JSON Web Key schema validation failed. Ensure that a valid JWK is passed that contains the key type expressed as "kty", a public exponent as "e”, and modulus as "n" parameters per RFC 7517.'
                 Write-Error -Exception $ArgumentException -ErrorAction Stop
             }
             else {
@@ -88,7 +88,7 @@ function Get-JwkCollection {
                     }
                 }
                 else {
-                    $ArgumentException = 'Only RSA JSON Web Keys are supported at this time.'
+                    $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList 'Only RSA JSON Web Keys are supported at this time.'
                     Write-Error -Exception $ArgumentException -ErrorAction Stop
                 }
             }
