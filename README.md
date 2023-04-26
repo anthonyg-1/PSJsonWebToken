@@ -220,7 +220,7 @@ $jwkUri = "https://app.mycompany.com/common/discovery/jwks"
 $targetKid = "h8s9z8PWwlz92OM_lcH2ZNYu9j0"
 
 # 3. Generate signing key from JWK converted to PEM:
-$signingKey = Convert-JwkToPem -Uri $jwkSetUri | Where-Object JwkIdentifier -eq $targetKid | Select-Object -ExpandProperty Pem
+$signingKey = Convert-JwkToPem -Uri $jwkSetUri | Where-Object JwkIdentifier -eq $targetKid | Select-Object -ExpandProperty Pem | ConvertTo-Base64UrlEncodedString
 
 # 4. Obtain prior payload to feed into new JWT:
 $jwtPayload = $captureJwt | Get-JsonWebTokenPayload
