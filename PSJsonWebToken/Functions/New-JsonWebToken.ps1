@@ -106,7 +106,7 @@ function New-JsonWebToken {
         [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 8)]
         [System.Uri]$X509Uri,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 8)]
+        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 9)]
         [Switch]$IncludeX509CertChain,
 
         [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 10)]
