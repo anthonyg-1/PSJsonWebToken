@@ -12,7 +12,7 @@
     RootModule           = '.\PSJsonWebToken.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '1.12.1'
+    ModuleVersion        = '1.12.2'
 
     # Compatibility
     CompatiblePSEditions = 'Desktop', 'Core'
