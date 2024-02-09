@@ -51,9 +51,9 @@ function Show-DecodedJwt {
 
         # Serialize the hashtables into JSON and output via Write-Host
         Write-Host -Object ""
-        $header | ConvertTo-Json | Write-Host -ForegroundColor Red -NoNewline
+        $header | ConvertTo-Json -Depth 25 | Write-Host -ForegroundColor Red -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
-        $payload | ConvertTo-Json | Write-Host -ForegroundColor Cyan -NoNewline
+        $payload | ConvertTo-Json -Depth 25 | Write-Host -ForegroundColor Cyan -NoNewline
         Write-Host -Object "." -ForegroundColor Yellow -NoNewline
         if ((($JsonWebToken.Split(".")[2]).Length -gt 8)) {
             Write-Host -Object "[Signature]" -ForegroundColor Green
