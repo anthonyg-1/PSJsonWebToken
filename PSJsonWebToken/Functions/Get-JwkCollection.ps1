@@ -1,4 +1,4 @@
-function Get-JwkCollection {
+﻿function Get-JwkCollection {
     <#
     .SYNOPSIS
         Gets a collection of JSON Web Keys (JWKs) from a URI.

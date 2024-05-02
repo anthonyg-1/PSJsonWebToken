@@ -1,4 +1,4 @@
-function Convert-JwkToPem {
+﻿function Convert-JwkToPem {
     <#
     .SYNOPSIS
         Converts a JWK public key to a PEM.
