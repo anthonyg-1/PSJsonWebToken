@@ -1,5 +1,4 @@
-function Convert-X509CertificateToBase64
-{
+function Convert-X509CertificateToBase64 {
     <#
     .SYNOPSIS
         Converts an X509Certificate2 to Base64.
@@ -23,18 +22,19 @@ function Convert-X509CertificateToBase64
         Get-PfxCertificate
 #>
     [CmdletBinding()]
+    [Alias('cx509tob64', 'cx509ctob64')]
     [OutputType([System.String])]
     Param (
         [Parameter(Mandatory = $true,
             ValueFromPipeline = $true,
             Position = 0)]
-        [ValidateNotNullOrEmpty()][Alias('Cert')]
+        [ValidateNotNullOrEmpty()][Alias('Cert', 'c', 'x509', 'x509c')]
         [X509Certificate]$Certificate,
 
         [Parameter(Mandatory = $false,
             ValueFromPipeline = $false,
             Position = 1)]
-        [Switch]$NoFormat
+        [Alias('nf')][Switch]$NoFormat
     )
     PROCESS {
         try {
@@ -65,8 +65,7 @@ function Convert-X509CertificateToBase64
                 $certString = $formattedResult -join "`r`n"
             }
         }
-        catch
-        {
+        catch {
             $CryptographicExceptionMessage = "Unable to export certificate to Base64. Exception details: {0}" -f $_.Exception
             $CryptographicException = New-Object -TypeName System.Security.Cryptography.CryptographicException -ArgumentList $CryptographicExceptionMessage
             Write-Error -Exception $CryptographicException -Category InvalidResult -ErrorAction Stop
