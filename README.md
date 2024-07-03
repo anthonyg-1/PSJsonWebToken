@@ -88,7 +88,7 @@ $cert = Get-PfxCertificate -FilePath "~/certs/cert.cer"
 New-JsonWebKeySet -Certificate $cert -KeyOperations Verification -Compress
 
 # Create a public/private key pair, and serialize the public key (from Linux or MacOS with openssl and PowerShell 7 installed):
-openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout pvk.pem -out pub.pem
+openssl req -newkey rsa:2048 -new -nodes -x509 -days 365 -keyout pvk.pem -out pub.pem
 openssl pkcs12 -inkey pvk.pem -in pub.pem -export -out cert.pfx
 $cert = Get-PfxCertificate -FilePath ./cert.pfx
 $cert | njwks -c > jwk.json
