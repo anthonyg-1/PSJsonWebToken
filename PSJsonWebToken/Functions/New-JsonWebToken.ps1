@@ -76,52 +76,52 @@ function New-JsonWebToken {
     [OutputType([System.String])]
     Param (
         [Parameter(Mandatory = $true, Position = 0)]
-        [ValidateNotNullOrEmpty()]
+        [ValidateNotNullOrEmpty()][Alias('Payload', 'p')]
         [System.Collections.Hashtable]$Claims,
 
         [Parameter(Mandatory = $false, Position = 1)]
-        [ValidateSet("SHA256", "SHA384", "SHA512")]
+        [ValidateSet("SHA256", "SHA384", "SHA512")][Alias('alg')]
         [String]$HashAlgorithm = "SHA256",
 
         [Parameter(Mandatory = $false, Position = 2)]
-        [ValidateRange(1, 300)]
+        [ValidateRange(1, 300)][Alias('nbfs')]
         [System.Int32]$NotBeforeSkew,
 
         [Parameter(Mandatory = $false, Position = 3)]
         [Switch]$AddJtiClaim,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "RSA", Position = 4)][Alias("Certificate", "Cert")]
+        [Parameter(Mandatory = $true, ParameterSetName = "RSA", Position = 4)][Alias("Certificate", "Cert", "c")]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$SigningCertificate,
 
         [Parameter(Mandatory = $false, Position = 5)]
-        [ValidateRange(1, 2147483647)]
+        [ValidateRange(1, 2147483647)][Alias('ttl')]
         [System.Int32]$TimeToLive = 300,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 6)]
+        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 6)][Alias('jku')]
         [System.Uri]$JwkUri,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 7)]
+        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 7)][Alias('iwjk')]
         [Switch]$IncludeJwk,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 8)]
+        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 8)][Alias('x5u')]
         [System.Uri]$X509Uri,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 9)]
+        [Parameter(Mandatory = $false, ParameterSetName = "RSA", Position = 9)][Alias('icc')]
         [Switch]$IncludeX509CertChain,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 10)]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMAC", Position = 10)][Alias('k')]
         [ValidateLength(1, 32768)]
         [String]$Key,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 11)]
+        [Parameter(Mandatory = $true, ParameterSetName = "HMACSecure", Position = 11)][Alias('sk')]
         [ValidateNotNullOrEmpty()]
         [System.Security.SecureString]$SecureKey,
 
-        [Parameter(Mandatory = $false, Position = 12)][Alias('ExcludeDefaultDateClaims')][Switch]$ExcludeDefaultClaims,
+        [Parameter(Mandatory = $false, Position = 12)][Alias('ExcludeDefaultDateClaims', 'edc')][Switch]$ExcludeDefaultClaims,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "Unsigned", Position = 13)][Switch]$NoSignature,
+        [Parameter(Mandatory = $false, ParameterSetName = "Unsigned", Position = 13)][Alias('nosig')][Switch]$NoSignature,
 
-        [Parameter(Mandatory = $false, Position = 14)][ValidateLength(0, 32768)][String]$CustomKeyIdentifier
+        [Parameter(Mandatory = $false, Position = 14)][ValidateLength(0, 32768)][Alias('kid')][String]$CustomKeyIdentifier
     )
 
     PROCESS {
