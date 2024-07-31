@@ -77,6 +77,21 @@ $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTY
 $jwt | Show-DecodedJwt
 ```
 
+### Authenticating to an API endpoint with an HMAC signed JWT
+```powershell
+# Create an HMAC JWT:
+$jwt = New-JsonWebToken -Claims @{sub="person@company.com"} -HashAlgorithm SHA256 -Key "myHmacSecret" -TimeToLive 300
+
+# Target URI:
+$endpoint = "https://api.mycompany.com/auth"
+
+# Create auth headers with JWT:
+$headers = @{Authorization="Bearer $jwt"}
+
+# Post JWT to endpoint:
+Invoke-RestMethod -Method Post -Uri $endpoint -Headers $headers
+```
+
 ### Generate a JWK (JSON Web Key) set from a certificate
 ```powershell
 # Return as formatted JSON
