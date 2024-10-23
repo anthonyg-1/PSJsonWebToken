@@ -21,6 +21,7 @@ function Show-EncodedJwt {
         https://tools.ietf.org/html/rfc7519
 #>
     [CmdletBinding()]
+    [Alias('sejwt')]
     [OutputType([System.Boolean])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
