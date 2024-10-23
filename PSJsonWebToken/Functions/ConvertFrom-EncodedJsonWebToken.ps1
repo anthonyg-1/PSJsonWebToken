@@ -38,7 +38,7 @@ function ConvertFrom-EncodedJsonWebToken {
         ConvertFrom-Json
 #>
     [CmdletBinding()]
-    [Alias('jwtd', 'djwt', 'DecodeJwt')]
+    [Alias('cjwt', 'cfjwt', 'jwtd', 'djwt', 'DecodeJwt')]
     [OutputType([PSJsonWebToken.DecodedJsonWebToken])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
