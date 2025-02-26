@@ -45,15 +45,15 @@ function Get-JwkCollection {
         [Parameter(Mandatory = $true,
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
-            Position = 0)][System.Uri]$Uri,
+            Position = 0)][Alias('Url', 'u')][System.Uri]$Uri,
 
         [Parameter(Mandatory = $false,
             ValueFromPipelineByPropertyName = $false,
-            Position = 1)][Switch]$AsJson,
+            Position = 1)][Alias('aj', 'j', 'json')][Switch]$AsJson,
 
         [Parameter(Mandatory = $false,
             ValueFromPipelineByPropertyName = $false,
-            Position = 2)][Switch]$IncludeX509Certificate
+            Position = 2)][Alias('ic', 'IncludeCert', 'IncludeCertificate', 'cert')][Switch]$IncludeX509Certificate
     )
     PROCESS {
         $jwks = @()
