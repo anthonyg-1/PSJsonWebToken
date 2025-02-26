@@ -154,6 +154,18 @@ $jwtSigningCert | New-JsonWebKeySet -Compress | Out-File -FilePath .\jwks.json -
 Remove-Item -Path $jwtSigningCert.PSPath
 ```
 
+### JWK retrieval
+```powershell
+# Get JWK objects from OIDC well known endpoint:
+Get-JwkCollection -Uri 'https://login.windows.net/common/discovery/keys'
+
+# Get JWK JSON string from OIDC well known endpoint:
+Get-JwkCollection -Uri 'https://login.windows.net/common/discovery/keys' -AsJson
+
+# Get JWK objects from OIDC well known endpoint including X509 certificates:
+Get-JwkCollection -Uri 'https://login.windows.net/common/discovery/keys' -IncludeX509Certificate
+```
+
 ### JWT attacks
 ```powershell
 # None alg attack
@@ -224,3 +236,4 @@ $jwtPayload = $captureJwt | Get-JsonWebTokenPayload
 
 # 5. Craft new JWT with same payload, new date ranges, and signed with public key as HMAC key:
 $badJwt = New-JsonWebToken -Claims $jwtPayload -Key $signingKey -TimeToLive 6000
+```
