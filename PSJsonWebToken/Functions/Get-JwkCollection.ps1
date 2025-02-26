@@ -103,8 +103,13 @@ function Get-JwkCollection {
                                 $keyHashTable.Add("X509Certificate", $x509Cert)
 
                                 $augmentedKey = [PSCustomObject]$keyHashTable
+
+                                $jwks += $augmentedKey
                             }
-                            $jwks += $augmentedKey
+                            else {
+                                Write-Warning -Message "x5c property does not exist on JSON Web Key."
+                                $jwks += $key
+                            }
                         }
                         else {
                             $jwks += $key
