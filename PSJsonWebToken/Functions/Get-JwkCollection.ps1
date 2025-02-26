@@ -1,9 +1,15 @@
-﻿function Get-JwkCollection {
+function Get-JwkCollection {
     <#
     .SYNOPSIS
         Gets a collection of JSON Web Keys (JWKs) from a URI.
     .DESCRIPTION
         Gets a collection of JSON Web Keys (JWKs) from a well known openid configuration endpoint or URI containing only JSON Web Keys.
+   .PARAMETER Uri
+        Specifies the Uniform Resource Identifier (URI) containing the JSON Web Keys. Can be a well-known OpenID Connect discovery endpoint or a link containing the JWKs directly.
+    .PARAMETER AsJson
+        Tells the function to return JSON as opposed to an object.
+    .PARAMETER IncludeX509Certificate
+        If the JWK in the collection contains a populated x5c property, this parameter converts this value into an System.Security.Cryptography.X509Certificates.X509Certificate2 object. This parameter does not work with the AsJson parameter.
     .EXAMPLE
         $oidcUrl = 'https://accounts.google.com/.well-known/openid-configuration'
         Get-JwkCollection -Uri $oidcUrl
@@ -43,7 +49,11 @@
 
         [Parameter(Mandatory = $false,
             ValueFromPipelineByPropertyName = $false,
-            Position = 1)][Switch]$AsJson
+            Position = 1)][Switch]$AsJson,
+
+        [Parameter(Mandatory = $false,
+            ValueFromPipelineByPropertyName = $false,
+            Position = 2)][Switch]$IncludeX509Certificate
     )
     PROCESS {
         $jwks = @()
@@ -80,11 +90,25 @@
             }
             else {
                 if ($key.kty -eq "RSA") {
-                    if ($AsJson) {
+                    if ($PSBoundParameters.ContainsKey("AsJson")) {
                         $jwks += ($key | ConvertTo-Json)
                     }
                     else {
-                        $jwks += $key
+                        if ($PSBoundParameters.ContainsKey("IncludeX509Certificate")) {
+                            if ($key.x5c) {
+                                $certBytes = [Encoding]::ASCII.GetBytes($key.x5c)
+                                $x509Cert = [X509Certificate2]::new($certBytes)
+
+                                $keyHashTable = $key | Convert-PSObjectToHashTable
+                                $keyHashTable.Add("X509Certificate", $x509Cert)
+
+                                $augmentedKey = [PSCustomObject]$keyHashTable
+                            }
+                            $jwks += $augmentedKey
+                        }
+                        else {
+                            $jwks += $key
+                        }
                     }
                 }
                 else {
@@ -93,7 +117,6 @@
                 }
             }
         }
-
         return $jwks
     }
 }
