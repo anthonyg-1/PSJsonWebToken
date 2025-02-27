@@ -96,19 +96,26 @@ function Get-JwkCollection {
                     else {
                         if ($PSBoundParameters.ContainsKey("IncludeX509Certificate")) {
                             if ($key.x5c) {
-                                $certBytes = [Encoding]::ASCII.GetBytes($key.x5c)
-                                $x509Cert = [X509Certificate2]::new($certBytes)
+                                try {
+                                    $certBytes = [Encoding]::ASCII.GetBytes($key.x5c)
+                                    $x509Cert = [X509Certificate2]::new($certBytes)
 
-                                $keyHashTable = $key | Convert-PSObjectToHashTable
-                                $keyHashTable.Add("X509Certificate", $x509Cert)
+                                    $keyHashTable = $key | Convert-PSObjectToHashTable
+                                    $keyHashTable.Add("X509Certificate", $x509Cert)
 
-                                $augmentedKey = [PSCustomObject]$keyHashTable
+                                    $augmentedKey = [PSCustomObject]$keyHashTable
 
-                                $jwks += $augmentedKey
+                                    $jwks += $augmentedKey
+                                }
+                                catch {
+                                    $jwks += $key
+                                    $ArgumentException = [System.ArgumentException]::new("Unable to decode and deserialize x5c value.")
+                                    Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Continue
+                                }
                             }
                             else {
-                                Write-Warning -Message "x5c property does not exist on JSON Web Key."
                                 $jwks += $key
+                                Write-Warning -Message "x5c property does not exist on JSON Web Key."
                             }
                         }
                         else {
