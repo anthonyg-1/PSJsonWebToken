@@ -74,7 +74,7 @@ function Get-JsonWebTokenPayload {
             return $jwtPayload | ConvertFrom-Base64UrlEncodedString
         }
         else {
-            [System.Collections.Hashtable]$jwtPayloadTable = $jwtPayload | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | Convert-PSObjectToHashTable
+            [System.Collections.Hashtable]$jwtPayloadTable = $jwtPayload | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json -Depth 25 | Convert-PSObjectToHashTable
             return $jwtPayloadTable
         }
     }
