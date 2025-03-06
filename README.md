@@ -20,16 +20,41 @@ Install-Module -Name PSJsonWebToken -Repository PSGallery -Scope CurrentUser
 
 ## Examples
 
-### Token decoding, creation, and validation
-
+### Token decoding
 ```powershell
-# Decode (not validate) a JWT
+# Decode and parse (not validate) a JWT
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
 $jwt | ConvertFrom-EncodedJsonWebToken
 
+# Display a decoded JWT
+$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
+$jwt | Show-DecodedJwt
+```
+
+
+### Token creation
+```powershell
 # Create an HMAC-SHA256 signed JWT with a five minute lifetime
 $secretKey = "secret" | ConvertTo-SecureString -AsPlainText -Force
 $jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -SecureKey $secretKey -TimeToLive 300
+
+# Create an RSA-SHA256 signed JWT with a five minute lifetime
+$cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
+$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -Certificate $cert -TimeToLive 300
+
+# Create an RSA-SHA256 signed JWT with a five minute lifetime with the JWK URI in the header
+$jwkUri = "https://app.mycompany.com/common/discovery/keys"
+$cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
+$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -Certificate $cert -JwkUri $jwkUri -TimeToLive 300 
+
+# Create an RSA-SHA256 signed JWT with a five minute lifetime with the public key as a JWK in the header
+$jwkUri = "https://app.mycompany.com/common/discovery/keys"
+$cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
+$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -Certificate $cert -IncludeJwk -TimeToLive 300
+```
+
+### Token validation
+```powershell
 # Validate an HMAC-SHA256 signed JWT
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
 $secretKey = "secret" | ConvertTo-SecureString -AsPlainText -Force
@@ -40,14 +65,11 @@ $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTY
 $secretKey = "secret" | ConvertTo-SecureString -AsPlainText -Force
 Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -SecureKey $secretKey -SkipExpirationCheck
 
-# Create an RSA-SHA256 signed JWT with a five minute lifetime
-$cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
-$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -Certificate $cert -TimeToLive 300
-
 # Validate an RSA-SHA256 signed JWT (signature and expiration check)
 $cert = Get-PfxCertificate -FilePath "~/certs/cert.cer" # (Get-PfxCertificate is capable of also getting certs sans private key)
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyIsImtpZCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyJ9.eyJpYXQiOjE2MDYwNTk2MjMsIm5iZiI6MTYwNjA1OTYyMywiZXhwIjoxNjA2MDU5OTIzLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.R6nTqCRwj_FchHp4oblZTkEIhSiSpGCV255SdXmWibNKS4eXtPlCngYaqfIqCwbeCbQB9G2zKHm2gAAolmylaZVoxaGTLOrrJXhfX79b4MNCT2Ixa1h2-B0RbBwV0lBCuaZscays-mxbR0INdnCPnuefrh1VyU9MC6dBpi-Q8r_En6Rtk1wl_a-xX93WtC2no96AtEV5kNErRUHOmTfhe2IjZR6S5uaMgXxrp7Ays8kEYVGwdWhF-JJ_9yUw9PB5pCmgkBED6urNNoeSTeEjTiqsRoHa1Ra9DhOriaegWXOZHEdthpg_JIzDBPYWjBbIfhNvhCwBrhGHbeXUtJL4bg"
 Test-JsonWebToken -JsonWebToken $jwt -HashAlgorithm SHA256 -Certificate $cert
+
 
 # Verify a JSON Web Token's digital signature only (no expiration) against a JSON Web Key
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyIsImtpZCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyJ9.eyJpYXQiOjE2MTgyNTAzODksIm5iZiI6MTYxODI1MDM4OSwiZXhwIjoxNjE4MjU1MTg5LCJzdWIiOiJ0b255In0.X-RZm-3Hto5U-8Q-Wp1ggqWTFPkO5-Cz9lzoKsH5-1RR9GOrGPuWn-bjIv1YJ46h5Bw-KpiX-dOS47TAq2A0BWdAwczLVA6pzha1WswkT_u3cO1_KSoOjD9qFLjCgk-ns7A48iXpNcOoPBFXgfx8G0rRK68sSnokJ7N2NH-YNUOjg3U7DNJ_-iz8WZ5dNlOvpDsTy0BHMX-lho18sUmakUNpadJr-oD7BXIp--Z57UERBFibppaoxseYRo3VfmhgHibTxP-39mcxU6sH9a99fEEt80hj4w6rZobRxZV-pFPS22B8TBAfVf8L9faMLaXmgV7xtQohqQZgL6oKdJzFPQ"
@@ -71,42 +93,6 @@ Test-JsonWebToken -JsonWebToken $jwt -Key "secret" -Audience "myapp" -Issuer "my
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyIsImtpZCI6IjJ5Q3Zabms3azhXNjZ3UjJMWFI5V0Nzd2hBYyJ9.eyJpYXQiOjE2MTgyNTAzODksIm5iZiI6MTYxODI1MDM4OSwiZXhwIjoxNjE4MjU1MTg5LCJzdWIiOiJ0b255In0.X-RZm-3Hto5U-8Q-Wp1ggqWTFPkO5-Cz9lzoKsH5-1RR9GOrGPuWn-bjIv1YJ46h5Bw-KpiX-dOS47TAq2A0BWdAwczLVA6pzha1WswkT_u3cO1_KSoOjD9qFLjCgk-ns7A48iXpNcOoPBFXgfx8G0rRK68sSnokJ7N2NH-YNUOjg3U7DNJ_-iz8WZ5dNlOvpDsTy0BHMX-lho18sUmakUNpadJr-oD7BXIp--Z57UERBFibppaoxseYRo3VfmhgHibTxP-39mcxU6sH9a99fEEt80hj4w6rZobRxZV-pFPS22B8TBAfVf8L9faMLaXmgV7xtQohqQZgL6oKdJzFPQ"
 $jwkUri = "https://app.mycompany.com/common/discovery/keys"
 Test-JsonWebToken -JsonWebToken $jwt -Uri $jwkUri -SkipExpirationCheck -Verbose
-
-# Display a decoded JWT
-$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
-$jwt | Show-DecodedJwt
-```
-
-### Authenticating to an API endpoint with an HMAC signed JWT
-```powershell
-# Create an HMAC JWT:
-$jwt = New-JsonWebToken -Claims @{sub="person@company.com"} -HashAlgorithm SHA256 -Key "myHmacSecret" -TimeToLive 300
-
-# Target URI:
-$endpoint = "https://api.mycompany.com/auth"
-
-# Create auth headers with JWT:
-$headers = @{Authorization="Bearer $jwt"}
-
-# Post JWT to endpoint:
-Invoke-RestMethod -Method Post -Uri $endpoint -Headers $headers
-```
-
-### Generate a JWK (JSON Web Key) set from a certificate
-```powershell
-# Return as formatted JSON
-$cert = Get-PfxCertificate -FilePath "~/certs/cert.cer"
-New-JsonWebKeySet -Certificate $cert -KeyOperations Verification
-
-# Compress the resulting JSON
-$cert = Get-PfxCertificate -FilePath "~/certs/cert.cer"
-New-JsonWebKeySet -Certificate $cert -KeyOperations Verification -Compress
-
-# Create a public/private key pair, and serialize the public key (from Linux or MacOS with openssl and PowerShell 7 installed):
-openssl req -newkey rsa:2048 -new -nodes -x509 -days 365 -keyout pvk.pem -out pub.pem
-openssl pkcs12 -inkey pvk.pem -in pub.pem -export -out cert.pfx
-$cert = Get-PfxCertificate -FilePath ./cert.pfx
-$cert | njwks -c > jwk.json
 ```
 
 ### Create a JWT using a self-signed cert and verify signature against JWK
@@ -152,6 +138,38 @@ $jwtSigningCert | New-JsonWebKeySet -Compress | Out-File -FilePath .\jwks.json -
 
 # Cleanup (remove cert):
 Remove-Item -Path $jwtSigningCert.PSPath
+```
+
+### Authenticating to an API endpoint with an HMAC signed JWT
+```powershell
+# Create an HMAC JWT:
+$jwt = New-JsonWebToken -Claims @{sub="person@company.com"} -HashAlgorithm SHA256 -Key "myHmacSecret" -TimeToLive 300
+
+# Target URI:
+$endpoint = "https://api.mycompany.com/auth"
+
+# Create auth headers with JWT:
+$headers = @{Authorization="Bearer $jwt"}
+
+# Post JWT to endpoint:
+Invoke-RestMethod -Method Post -Uri $endpoint -Headers $headers
+```
+
+### Generate a JWK (JSON Web Key) set from a certificate
+```powershell
+# Return as formatted JSON
+$cert = Get-PfxCertificate -FilePath "~/certs/cert.cer"
+New-JsonWebKeySet -Certificate $cert -KeyOperations Verification
+
+# Compress the resulting JSON
+$cert = Get-PfxCertificate -FilePath "~/certs/cert.cer"
+New-JsonWebKeySet -Certificate $cert -KeyOperations Verification -Compress
+
+# Create a public/private key pair, and serialize the public key (from Linux or MacOS with openssl and PowerShell 7 installed):
+openssl req -newkey rsa:2048 -new -nodes -x509 -days 365 -keyout pvk.pem -out pub.pem
+openssl pkcs12 -inkey pvk.pem -in pub.pem -export -out cert.pfx
+$cert = Get-PfxCertificate -FilePath ./cert.pfx
+$cert | njwks -c > jwk.json
 ```
 
 ### JWK retrieval
