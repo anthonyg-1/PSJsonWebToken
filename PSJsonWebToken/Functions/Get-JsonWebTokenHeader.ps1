@@ -74,7 +74,7 @@ function Get-JsonWebTokenHeader {
             return $jwtHeader | ConvertFrom-Base64UrlEncodedString
         }
         else {
-            [System.Collections.Hashtable]$jwtHeaderTable = $jwtHeader | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json -Depth 25 | Convert-PSObjectToHashTable
+            [System.Collections.Hashtable]$jwtHeaderTable = $jwtHeader | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | Convert-PSObjectToHashTable
             return $jwtHeaderTable
         }
     }
