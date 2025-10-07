@@ -5,11 +5,13 @@
 This PowerShell module contains functions to create, validate, and test JSON Web Tokens (JWT) per [RFC 7519](https://tools.ietf.org/html/rfc7519) and [RFC 7515](https://tools.ietf.org/html/rfc7515). Additional functionality is included for the creation of JSON Web Keys (JWK) per [RFC 7517](https://tools.ietf.org/html/rfc7517).
 
 ### Tested on
+
 :desktop_computer: `Windows 10/11`
 :penguin: `Linux`
 :apple: `MacOS`
 
 ### Requirements
+
 Requires PowerShell 5.1 or above.
 
 ### Installation
@@ -21,18 +23,27 @@ Install-Module -Name PSJsonWebToken -Repository PSGallery -Scope CurrentUser
 ## Examples
 
 ### Token decoding
+
 ```powershell
+# Display a decoded JWT
+$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
+$jwt | Show-DecodedJwt
+
 # Decode and parse (not validate) a JWT
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
 $jwt | ConvertFrom-EncodedJsonWebToken
 
-# Display a decoded JWT
+# Get a JWT header as a dictionary:
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
-$jwt | Show-DecodedJwt
+$jwt | Get-JsonWebTokenHeader
+
+# Get a JWT payload as a dictionary:
+$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
+$jwt | Get-JsonWebTokenPayload
 ```
 
-
 ### Token creation
+
 ```powershell
 # Create an HMAC-SHA256 signed JWT with a five minute lifetime
 $secretKey = "secret" | ConvertTo-SecureString -AsPlainText -Force
@@ -45,7 +56,7 @@ $jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA
 # Create an RSA-SHA256 signed JWT with a five minute lifetime with the JWK URI in the header
 $jwkUri = "https://app.mycompany.com/common/discovery/keys"
 $cert = Get-PfxCertificate -FilePath "~/certs/cert.pfx"
-$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -Certificate $cert -JwkUri $jwkUri -TimeToLive 300 
+$jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA256 -Certificate $cert -JwkUri $jwkUri -TimeToLive 300
 
 # Create an RSA-SHA256 signed JWT with a five minute lifetime with the public key as a JWK in the header
 $jwkUri = "https://app.mycompany.com/common/discovery/keys"
@@ -54,6 +65,7 @@ $jwt = New-JsonWebToken -Claims @{sub="username@company.com"} -HashAlgorithm SHA
 ```
 
 ### Token validation
+
 ```powershell
 # Validate an HMAC-SHA256 signed JWT
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
@@ -96,6 +108,7 @@ Test-JsonWebToken -JsonWebToken $jwt -Uri $jwkUri -SkipExpirationCheck -Verbose
 ```
 
 ### Create a JWT using a self-signed cert and verify signature against JWK
+
 ```powershell
 # Generate self-signed signing certificate required for New-JsonWebToken:
 function New-JwtSigningCert([string]$Upn = "jwt.test@mydomain.local",
@@ -141,6 +154,7 @@ Remove-Item -Path $jwtSigningCert.PSPath
 ```
 
 ### Authenticating to an API endpoint with an HMAC signed JWT
+
 ```powershell
 # Create an HMAC JWT:
 $jwt = New-JsonWebToken -Claims @{sub="person@company.com"} -HashAlgorithm SHA256 -Key "myHmacSecret" -TimeToLive 300
@@ -156,6 +170,7 @@ Invoke-RestMethod -Method Post -Uri $endpoint -Headers $headers
 ```
 
 ### Generate a JWK (JSON Web Key) set from a certificate
+
 ```powershell
 # Return as formatted JSON
 $cert = Get-PfxCertificate -FilePath "~/certs/cert.cer"
@@ -173,6 +188,7 @@ $cert | njwks -c > jwk.json
 ```
 
 ### JWK retrieval
+
 ```powershell
 # Get JWK objects from OIDC well known endpoint:
 Get-JwkCollection -Uri 'https://login.windows.net/common/discovery/keys'
@@ -185,6 +201,7 @@ Get-JwkCollection -Uri 'https://login.windows.net/common/discovery/keys' -Includ
 ```
 
 ### JWT attacks
+
 ```powershell
 # None alg attack
 $jwt = New-JsonWebToken -Claims @{sub="hackerman@hacktheplanet.org";role="megahacker"} -TimeToLive 3600
