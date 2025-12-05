@@ -32,7 +32,7 @@ function Show-EncodedJwt {
         $ArgumentException = New-Object -TypeName ArgumentException -ArgumentList $decodeExceptionMessage
     }
     PROCESS {
-        [bool]$hasValidJwtStructure = Test-JwtStructure -JsonWebToken $JsonWebToken -VerifySignaturePresent
+        [bool]$hasValidJwtStructure = Test-JwtStructure -JsonWebToken $JsonWebToken
         if (-not($hasValidJwtStructure)) {
             Write-Error -Exception $ArgumentException -Category InvalidArgument -ErrorAction Stop
         }
@@ -40,7 +40,11 @@ function Show-EncodedJwt {
         # Get the header, payload, and signature as their already encoded strings:
         $header = Get-JsonWebTokenHeader -JsonWebToken $JsonWebToken -AsEncodedString
         $payload = Get-JsonWebTokenPayload -JsonWebToken $JsonWebToken -AsEncodedString
-        $signature = Get-JsonWebTokenSignature -JsonWebToken $JsonWebToken -AsEncodedString
+        $signature = ""
+
+        if ((($JsonWebToken.Split(".")[2]).Length -gt 8)) {
+            $signature = Get-JsonWebTokenSignature -JsonWebToken $JsonWebToken -AsEncodedString
+        }
 
         # Write each of the three JWT parts seperated by periods:
         Write-Host -Object ""
