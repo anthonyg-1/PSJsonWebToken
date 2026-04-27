@@ -1,5 +1,3 @@
-# ReadMe
-
 ## PSJsonWebToken
 
 This PowerShell module contains functions to create, validate, and test JSON Web Tokens (JWT) per [RFC 7519](https://tools.ietf.org/html/rfc7519) and [RFC 7515](https://tools.ietf.org/html/rfc7515). Additional functionality is included for the creation of JSON Web Keys (JWK) per [RFC 7517](https://tools.ietf.org/html/rfc7517).
