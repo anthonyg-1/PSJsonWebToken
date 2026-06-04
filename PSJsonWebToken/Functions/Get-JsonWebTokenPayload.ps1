@@ -9,7 +9,9 @@ function Get-JsonWebTokenPayload {
     .PARAMETER AsEncodedString
         Returns the payload as a base 64 URL encoded string.
     .PARAMETER AsJson
-        Returns the payload as a JSON string.
+        Returns the payload as a compressed JSON string.
+    .PARAMETER Formatted
+        Returns the payload as a formatted (indented) JSON string. Must be used with -AsJson.
     .EXAMPLE
         $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
         $jwt | Get-JsonWebTokenPayload
@@ -24,7 +26,12 @@ function Get-JsonWebTokenPayload {
         $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
         Get-JsonWebTokenPayload -JsonWebToken $jwt -AsJson
 
-        Returns the decoded payload from the passed JWT.
+        Returns the decoded payload from the passed JWT as a compressed JSON string.
+    .EXAMPLE
+        $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
+        Get-JsonWebTokenPayload -JsonWebToken $jwt -AsJson -Formatted
+
+        Returns the decoded payload from the passed JWT as a formatted JSON string.
     .INPUTS
         System.String
 
@@ -52,7 +59,11 @@ function Get-JsonWebTokenPayload {
 
         [Parameter(ParameterSetName = "JSON", Mandatory = $true,
             ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false, Position = 1)][Alias("json")][switch]$AsJson
+            ValueFromPipelineByPropertyName = $false, Position = 1)][Alias("json")][switch]$AsJson,
+
+        [Parameter(ParameterSetName = "JSON", Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false, Position = 2)][switch]$Formatted
     )
 
     BEGIN {
@@ -71,7 +82,12 @@ function Get-JsonWebTokenPayload {
             return $jwtPayload
         }
         elseif ($PSBoundParameters.ContainsKey("AsJson")) {
-            return $jwtPayload | ConvertFrom-Base64UrlEncodedString
+            if ($PSBoundParameters.ContainsKey("Formatted")) {
+                return $jwtPayload | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | ConvertTo-Json
+            }
+            else {
+                return $jwtPayload | ConvertFrom-Base64UrlEncodedString
+            }
         }
         else {
             [System.Collections.Hashtable]$jwtPayloadTable = $jwtPayload | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | Convert-PSObjectToHashTable

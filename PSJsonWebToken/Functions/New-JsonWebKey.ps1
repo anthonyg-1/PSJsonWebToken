@@ -13,9 +13,9 @@ function New-JsonWebKey {
     .PARAMETER IncludeCertificateChain
         Tells the function to include the full certificate chain which includes not only the end-entity certificate, but also the issuing and root certificate in the x5c property (X.509 Certificate Chain).
     .PARAMETER AsJson
-         Tells the function to return JSON as opposed to an object.
-    .PARAMETER Compress
-        Omits white space and indented formatting in the output JSON Web Key.
+        Tells the function to return compressed JSON as opposed to an object.
+    .PARAMETER Formatted
+        Returns the JSON Web Key as formatted (indented) JSON. Must be used with -AsJson.
     .EXAMPLE
         $certThumbprint = "706428667193645C3B4704FC824BEDFCEBB4F038"
         $certPath = Join-Path -Path Cert:\LocalMachine\My -ChildPath $certThumbprint
@@ -34,6 +34,22 @@ function New-JsonWebKey {
         $jwksSet = @{keys=$jwks} | ConvertTo-Json
 
         Obtains a collection of certificates from Cert:\LocalMachine\My where the subject contains the string "jwt", and for each one of them converts them to a JWK object, adds them to an array and serializes the result into a JWK set.
+    .EXAMPLE
+        $certThumbprint = "706428667193645C3B4704FC824BEDFCEBB4F038"
+        $certPath = Join-Path -Path Cert:\LocalMachine\My -ChildPath $certThumbprint
+        $verificationCert = Get-Item -Path $certPath
+
+        $verificationCert | New-JsonWebKey -AsJson
+
+        Returns a compressed JSON Web Key from the specified certificate.
+    .EXAMPLE
+        $certThumbprint = "706428667193645C3B4704FC824BEDFCEBB4F038"
+        $certPath = Join-Path -Path Cert:\LocalMachine\My -ChildPath $certThumbprint
+        $verificationCert = Get-Item -Path $certPath
+
+        $verificationCert | New-JsonWebKey -AsJson -Formatted
+
+        Returns a formatted JSON Web Key from the specified certificate.
     .INPUTS
         System.Security.Cryptography.X509Certificates.X509Certificate2
 
@@ -65,7 +81,7 @@ function New-JsonWebKey {
         [Parameter(Mandatory = $false, Position = 3)][Alias('IncludeChain', 'icc')][Switch]$IncludeCertificateChain,
 
         [Parameter(Mandatory = $false, Position = 4, ParameterSetName = "JSON")][Switch]$AsJson,
-        [Parameter(Mandatory = $false, Position = 5, ParameterSetName = "JSON")][Switch]$Compress
+        [Parameter(Mandatory = $false, Position = 5, ParameterSetName = "JSON")][Switch]$Formatted
     )
 
     PROCESS {
@@ -142,11 +158,11 @@ function New-JsonWebKey {
 
         if ($PSCmdlet.ParameterSetName -eq "JSON") {
             [string]$jwkString = ""
-            if ($PSBoundParameters.ContainsKey("Compress")) {
-                $jwkString = $jwkObject | ConvertTo-Json -Depth 25 -Compress
+            if ($PSBoundParameters.ContainsKey("Formatted")) {
+                $jwkString = $jwkObject | ConvertTo-Json -Depth 25
             }
             else {
-                $jwkString = $jwkObject | ConvertTo-Json -Depth 25
+                $jwkString = $jwkObject | ConvertTo-Json -Depth 25 -Compress
             }
             return $jwkString
         }

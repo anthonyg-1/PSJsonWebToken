@@ -7,7 +7,9 @@ function Get-JwkCollection {
    .PARAMETER Uri
         Specifies the Uniform Resource Identifier (URI) containing the JSON Web Keys. Can be a well-known OpenID Connect discovery endpoint or a link containing the JWKs directly.
     .PARAMETER AsJson
-        Tells the function to return JSON as opposed to an object.
+        Tells the function to return compressed JSON as opposed to an object.
+    .PARAMETER Formatted
+        Returns JSON as formatted (indented) output. Must be used with -AsJson.
     .PARAMETER IncludeX509Certificate
         If the JWK in the collection contains a populated x5c property, this parameter converts this value into an System.Security.Cryptography.X509Certificates.X509Certificate2 object. This parameter does not work with the AsJson parameter.
     .EXAMPLE
@@ -19,7 +21,12 @@ function Get-JwkCollection {
         $jwkUrl = 'https://login.windows.net/common/discovery/keys'
         Get-JwkCollection -Uri $jwkUrl -AsJson
 
-        Gets JSON Web Keys from Microsoft's JWK endpoint as JSON.
+        Gets JSON Web Keys from Microsoft's JWK endpoint as compressed JSON.
+    .EXAMPLE
+        $jwkUrl = 'https://login.windows.net/common/discovery/keys'
+        Get-JwkCollection -Uri $jwkUrl -AsJson -Formatted
+
+        Gets JSON Web Keys from Microsoft's JWK endpoint as formatted JSON.
     .EXAMPLE
         $jwkUrl = 'https://login.windows.net/common/discovery/keys'
         Get-JwkCollection -Uri $jwkUrl -IncludeX509Certificate
@@ -58,7 +65,11 @@ function Get-JwkCollection {
 
         [Parameter(Mandatory = $false,
             ValueFromPipelineByPropertyName = $false,
-            Position = 2)][Alias('ic', 'IncludeCert', 'IncludeCertificate', 'cert')][Switch]$IncludeX509Certificate
+            Position = 2)][Switch]$Formatted,
+
+        [Parameter(Mandatory = $false,
+            ValueFromPipelineByPropertyName = $false,
+            Position = 3)][Alias('ic', 'IncludeCert', 'IncludeCertificate', 'cert')][Switch]$IncludeX509Certificate
     )
     PROCESS {
         $jwks = @()
@@ -96,7 +107,12 @@ function Get-JwkCollection {
             else {
                 if ($key.kty -eq "RSA") {
                     if ($PSBoundParameters.ContainsKey("AsJson")) {
-                        $jwks += ($key | ConvertTo-Json)
+                        if ($PSBoundParameters.ContainsKey("Formatted")) {
+                            $jwks += ($key | ConvertTo-Json)
+                        }
+                        else {
+                            $jwks += ($key | ConvertTo-Json -Compress)
+                        }
                     }
                     else {
                         if ($PSBoundParameters.ContainsKey("IncludeX509Certificate")) {

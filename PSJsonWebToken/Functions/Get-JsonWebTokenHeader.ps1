@@ -9,7 +9,9 @@ function Get-JsonWebTokenHeader {
     .PARAMETER AsEncodedString
         Returns the header as a base 64 URL encoded string.
     .PARAMETER AsJson
-        Returns the header as a JSON string.
+        Returns the header as a compressed JSON string.
+    .PARAMETER Formatted
+        Returns the header as a formatted (indented) JSON string. Must be used with -AsJson.
     .EXAMPLE
         $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
         $jwt | Get-JsonWebTokenHeader
@@ -24,7 +26,12 @@ function Get-JsonWebTokenHeader {
         $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
         Get-JsonWebTokenHeader -JsonWebToken $jwt -AsJson
 
-        Returns the decoded header from the passed JWT.
+        Returns the decoded header from the passed JWT as a compressed JSON string.
+    .EXAMPLE
+        $jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.VG6H-orYnMLknmJajHx1HW9SftqCWeqE3TQ1UArx3Mk"
+        Get-JsonWebTokenHeader -JsonWebToken $jwt -AsJson -Formatted
+
+        Returns the decoded header from the passed JWT as a formatted JSON string.
     .INPUTS
         System.String
 
@@ -52,7 +59,11 @@ function Get-JsonWebTokenHeader {
 
         [Parameter(ParameterSetName = "JSON", Mandatory = $true,
             ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false, Position = 1)][Alias("json")][switch]$AsJson
+            ValueFromPipelineByPropertyName = $false, Position = 1)][Alias("json")][switch]$AsJson,
+
+        [Parameter(ParameterSetName = "JSON", Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false, Position = 2)][switch]$Formatted
     )
 
     BEGIN {
@@ -71,7 +82,12 @@ function Get-JsonWebTokenHeader {
             return $jwtHeader
         }
         elseif ($PSBoundParameters.ContainsKey("AsJson")) {
-            return $jwtHeader | ConvertFrom-Base64UrlEncodedString
+            if ($PSBoundParameters.ContainsKey("Formatted")) {
+                return $jwtHeader | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | ConvertTo-Json
+            }
+            else {
+                return $jwtHeader | ConvertFrom-Base64UrlEncodedString
+            }
         }
         else {
             [System.Collections.Hashtable]$jwtHeaderTable = $jwtHeader | ConvertFrom-Base64UrlEncodedString | ConvertFrom-Json | Convert-PSObjectToHashTable
