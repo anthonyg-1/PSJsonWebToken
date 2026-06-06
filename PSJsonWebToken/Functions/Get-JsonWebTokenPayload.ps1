@@ -45,7 +45,7 @@ function Get-JsonWebTokenPayload {
         Get-JsonWebTokenSignature
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    [Alias('gjwtp')]
+    [Alias('gjwtp', 'Get-JwtPayload')]
     [OutputType([System.Collections.Hashtable])]
     [OutputType([System.String], ParameterSetName = "Base64")]
     [OutputType([System.String], ParameterSetName = "JSON")]

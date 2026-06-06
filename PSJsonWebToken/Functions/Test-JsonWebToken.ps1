@@ -88,7 +88,7 @@ function Test-JsonWebToken {
         New-JsonWebToken
 #>
     [CmdletBinding()]
-    [Alias('tjwt', 'ValidateJwt')]
+    [Alias('tjwt', 'ValidateJwt', 'Test-Jwt')]
     [OutputType([System.Boolean])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $false, Position = 0)]

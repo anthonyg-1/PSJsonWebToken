@@ -13,7 +13,7 @@ Set-Location -Path ..
 
 $module = 'PSJsonWebToken'
 
-$moduleDirectory = Get-Item -Path ../$module | Select-Object -ExpandProperty FullName
+$moduleDirectory = Get-Item -Path (Join-Path -Path (Split-Path -Parent $here) -ChildPath $module) | Select-Object -ExpandProperty FullName
 
 Clear-Host
 

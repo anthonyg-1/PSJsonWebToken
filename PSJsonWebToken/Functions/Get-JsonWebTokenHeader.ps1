@@ -45,7 +45,7 @@ function Get-JsonWebTokenHeader {
         Get-JsonWebTokenSignature
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    [Alias('gjwth')]
+    [Alias('gjwth', 'Get-JwtHeader')]
     [OutputType([System.Collections.Hashtable])]
     [OutputType([System.String], ParameterSetName = "Base64")]
     [OutputType([System.String], ParameterSetName = "JSON")]

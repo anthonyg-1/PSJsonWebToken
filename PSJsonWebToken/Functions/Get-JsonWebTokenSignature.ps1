@@ -31,7 +31,7 @@ function Get-JsonWebTokenSignature {
         Get-JsonWebTokenPayload
 #>
     [CmdletBinding()]
-    [Alias('gjwtsig')]
+    [Alias('gjwtsig', 'Get-JwtSignature')]
     [OutputType([System.String], [System.Byte[]])]
     Param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]

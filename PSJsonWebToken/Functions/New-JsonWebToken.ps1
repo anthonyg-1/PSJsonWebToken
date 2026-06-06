@@ -72,7 +72,7 @@ function New-JsonWebToken {
         ConvertTo-SecureString
 #>
     [CmdletBinding()]
-    [Alias('njwt', 'NewJwt', 'CreateJwt')]
+    [Alias('njwt', 'NewJwt', 'CreateJwt', 'New-Jwt')]
     [OutputType([System.String])]
     Param (
         [Parameter(Mandatory = $true, Position = 0)]
