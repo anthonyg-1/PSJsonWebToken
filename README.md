@@ -18,6 +18,10 @@ Requires PowerShell 5.1 or above.
 Install-Module -Name PSJsonWebToken -Repository PSGallery -Scope CurrentUser
 ```
 
+### Aliases
+
+Each function whose name contains `JsonWebToken` has a shorter `Jwt` alias (for example, `Get-JsonWebTokenPayload` can be called as `Get-JwtPayload`). Run `Get-Command -Module PSJsonWebToken` to see all functions and their aliases.
+
 ## Examples
 
 ### Token decoding
