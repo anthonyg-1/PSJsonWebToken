@@ -382,6 +382,68 @@ Describe "$module Function Tests" -Tag Functional, Integration -WarningAction Si
             $output.GetType().Name | Should Be "String"
         }
     }
+
+    Context "Get-JwtExpiration" {
+        It "should have the alias gjwte" {
+            (Get-Alias -Name gjwte).ResolvedCommandName | Should -Be "Get-JwtExpiration"
+        }
+
+        It "should include expiration properties based on the exp claim" {
+            $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret" -TimeToLive 5400
+            $jwtExpiration = $jwt | Get-JwtExpiration
+
+            $jwtExpiration.ExpiresAt | Should -Not -BeNullOrEmpty
+            $jwtExpiration.ExpirationInMinutes | Should -BeGreaterThan 88
+            $jwtExpiration.ExpirationInMinutes | Should -BeLessThan 91
+            $jwtExpiration.ExpirationInHours | Should -Be ([Math]::Round(($jwtExpiration.ExpirationInMinutes / 60), 1))
+        }
+
+        It "should not return output when the token does not contain an exp claim" {
+            $key = "secret"
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+            $payload = @{sub = "tony" } | ConvertTo-JwtPart
+            $jwt = "{0}.{1}" -f $header, $payload
+            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+            $jws = "{0}.{1}" -f $jwt, $sig
+
+            $jws | Get-JwtExpiration | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "ConvertFrom-EncodedJsonWebToken" {
+        It "should include ExpirationInMinutes based on the exp claim" {
+            $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret" -TimeToLive 600
+            $decodedJwt = $jwt | ConvertFrom-EncodedJsonWebToken
+
+            $decodedJwt.ExpiresAt | Should -Not -BeNullOrEmpty
+            $decodedJwt.ExpirationInMinutes | Should -BeGreaterThan 8
+            $decodedJwt.ExpirationInMinutes | Should -BeLessThan 11
+            $decodedJwt.PSObject.Properties.Name -contains "ExpirationInHours" | Should -Be False
+        }
+
+        It "should include ExpirationInHours when expiration is greater than one hour" {
+            $jwt = New-JsonWebToken -Claims @{sub = "me@company.com" } -HashAlgorithm SHA256 -Key "secret" -TimeToLive 5400
+            $decodedJwt = $jwt | ConvertFrom-EncodedJsonWebToken
+
+            $decodedJwt.ExpirationInMinutes | Should -BeGreaterThan 88
+            $decodedJwt.ExpirationInMinutes | Should -BeLessThan 91
+            $decodedJwt.ExpirationInHours | Should -Be ([Math]::Round(($decodedJwt.ExpirationInMinutes / 60), 1))
+        }
+
+        It "should not include expiration properties when the token does not contain an exp claim" {
+            $key = "secret"
+            $header = [ordered]@{typ = "JWT"; alg = "HS256" } | ConvertTo-JwtPart
+            $payload = @{sub = "tony" } | ConvertTo-JwtPart
+            $jwt = "{0}.{1}" -f $header, $payload
+            $sig = New-JwtSignature -JsonWebToken $jwt -HashAlgorithm SHA256 -Key $key
+            $jws = "{0}.{1}" -f $jwt, $sig
+
+            $decodedJwt = $jws | ConvertFrom-EncodedJsonWebToken
+
+            $decodedJwt.PSObject.Properties.Name -contains "ExpiresAt" | Should -Be False
+            $decodedJwt.PSObject.Properties.Name -contains "ExpirationInMinutes" | Should -Be False
+        }
+    }
 }
 
 Context "Get-JsonWebTokenSignature" {

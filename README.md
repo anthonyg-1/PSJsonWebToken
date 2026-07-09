@@ -42,6 +42,13 @@ $jwt | Get-JsonWebTokenHeader
 # Get a JWT payload as a dictionary:
 $jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDYwNTkyMzEsIm5iZiI6MTYwNjA1OTIzMSwiZXhwIjoxNjA2MDU5NTMxLCJzdWIiOiJ1c2VybmFtZUBjb21wYW55LmNvbSJ9.7j3SPowPaHlviVZeRFxIwyLa1qPzrL5jk1sguNG0yDg"
 $jwt | Get-JsonWebTokenPayload
+
+# Get calculated JWT expiration details:
+$jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODM2MTM0ODJ9.1Jdew5HbRgPa85jLOZsVYMhnIAEBZlQ0owo2TgWuwos"
+$jwt | Get-JwtExpiration
+
+# Get calculated JWT expiration details using the alias:
+$jwt | gjwte
 ```
 
 ### Token creation
