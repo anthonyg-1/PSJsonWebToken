@@ -23,7 +23,7 @@ function ConvertFrom-EncodedJsonWebToken {
 
         ConvertFrom-EncodedJsonWebToken -JsonWebToken $jwt | Select IssuedAt, NotBefore
 
-        Returns the iat and exp claims in the payload deserialized as "IssuedAt" and "Expiration" as DateTime.
+        Returns the iat and exp claims in the payload deserialized as "IssuedAt" and "ExpiresAt" as DateTime.
     .INPUTS
         System.String
 
@@ -31,7 +31,10 @@ function ConvertFrom-EncodedJsonWebToken {
     .OUTPUTS
         PSJsonWebToken.DecodedJsonWebToken
 
-            An object containing the decoded header and payload segments. The signature segment remains encoded.    .
+            An object containing the decoded header and payload segments. The signature segment remains encoded.
+            If an exp claim is present, the object contains ExpiresAt and ExpirationInMinutes properties.
+            If expiration is greater than one hour, the object also contains an ExpirationInHours property.
+            If an exp claim is not present, these properties are not added.
     .LINK
 		https://tools.ietf.org/html/rfc7519
         New-JsonWebToken
@@ -116,14 +119,17 @@ function ConvertFrom-EncodedJsonWebToken {
 
         if ($deserializedPayload.ContainsKey("exp")) {
             try {
-                $expiration = Convert-EpochToDateTime -Epoch $deserializedPayload.exp
-                $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name Expiration -Value $expiration
+                $jwtExpiration = Get-JwtExpiration -JsonWebToken $JsonWebToken
+                if ($null -ne $jwtExpiration) {
+                    $jwtExpiration.PSObject.Properties | ForEach-Object {
+                        $decodedJsonWebToken | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value
+                    }
+                }
             }
             catch {
                 Write-Error -Exception $_.Exception
             }
         }
-
         return $decodedJsonWebToken
     }
 }
